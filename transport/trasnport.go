@@ -14,7 +14,7 @@ func setupRoutes(app *fiber.App) {
 	app.Get("/", helloWorld)
 	app.Get("/api/v1/device", device.GetDevices)
 	app.Get("/api/v1/device/:isin", device.GetDevice)
-	app.Post("/api/v1/device", device.NewDevice)
+	app.Post("/api/v1/device", device.AddDevice)
 	app.Delete("/api/v1/device/:isin", device.DeleteDevice)
 }
 

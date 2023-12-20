@@ -1,61 +1,75 @@
 package device
 
 import (
-	"fmt"
+	"strconv"
 
 	"github.com/Welasco/HubitatDeviceEvents/database"
+	"github.com/Welasco/HubitatDeviceEvents/model"
 	"github.com/gofiber/fiber/v2"
-	//"github.com/jinzhu/gorm"
 )
 
-type Device struct {
-	//gorm.Model
-	ISIN   int    `json:"ISIN"`
-	Title  string `json:"title"`
-	Author string `json:"author"`
-	Rating int    `json:"rating"`
+var db database.Database
+
+func DBInit(config model.Config) {
+	// Check if database is already initialized
+	if config.DatabaseType == "mysql" {
+		db, err := database.NewMysqlDB("ConnectionString", "DatabaseName", 1433, "UserName", "Password")
+		if err != nil {
+			panic(err)
+		}
+		db = db
+	}
+	// Implement additional database types here
 }
 
-func GetDevices(c *fiber.Ctx) {
-	db := database.DBConn
-	var devices []Device
-	db.Find(&devices)
-	c.JSON(devices)
+func GetDevices(c *fiber.Ctx) error {
+	//var devices []model.Device
+	devices, _ := db.GetDevices()
+	return c.JSON(devices)
 }
 
-func GetDevice(c *fiber.Ctx) {
+func GetDevice(c *fiber.Ctx) error {
 	id := c.Params("id")
-	db := database.DBConn
-	var device Device
-	db.Find(&device, id)
-	c.JSON(device)
+	int_id, _ := strconv.Atoi(id)
+	var device model.Device
+	//db.Find(&device, id)
+	device, _ = db.GetDevice(int_id)
+	return c.JSON(device)
 }
 
-func NewDevice(c *fiber.Ctx) {
-	db := database.DBConn
-
-	device := new(Device)
+func AddDevice(c *fiber.Ctx) error {
+	var device model.Device
 	if err := c.BodyParser(device); err != nil {
-		c.Status(503).Send(err)
-		return
+		//c.Status(503).Send(err)
+		c.Status(503).SendString(err.Error())
+		return err
 	}
 
-	db.Create(&device)
-	c.JSON(device)
+	db.AddDevice(&device)
+	return c.JSON(device)
 }
 
-func DeleteDevice(c *fiber.Ctx) {
-	ISIN := c.Params("isin")
-	db := database.DBConn
-
-	fmt.Println(ISIN)
-
-	var device Device
-	db.Find(&device, "ISIN = ?", ISIN)
-	if device.Title == "" {
-		c.Status(500).Send("No device found with given ID")
-		return
+func DeleteDevice(c *fiber.Ctx) error {
+	id := c.Params("id")
+	int_id, _ := strconv.Atoi(id)
+	var device model.Device
+	device, _ = db.GetDevice(int_id)
+	if device.DisplayName == "" {
+		c.Status(500).SendString("No device found with given ID")
+		return nil
 	}
-	db.Delete(&device)
-	c.Send("Device successfully deleted")
+	db.DeleteDevice(int_id)
+	return c.SendString("Device successfully deleted")
+}
+
+func UpdateDevice(c *fiber.Ctx) error {
+	var device model.Device
+	if err := c.BodyParser(device); err != nil {
+		//c.Status(503).Send(err)
+		c.Status(503).SendString(err.Error())
+		return err
+	}
+
+	db.UpdateDevice(&device)
+	return c.JSON(device)
 }
