@@ -3,6 +3,7 @@ package device
 import (
 	"strconv"
 
+	logger "github.com/Welasco/HubitatDeviceEvents/common/logger"
 	"github.com/Welasco/HubitatDeviceEvents/database"
 	"github.com/Welasco/HubitatDeviceEvents/model"
 	"github.com/gofiber/fiber/v2"
@@ -16,7 +17,9 @@ func DBInit(config model.Config) {
 		var err error
 		db, err = database.NewMysqlDB(config.ConnectionString, config.DatabaseName, 1433, config.UserName, config.Password)
 		if err != nil {
-			panic(err)
+			logger.Error("[device][DBInit] Error initializing database")
+			logger.Error("[device][DBInit] " + err.Error())
+			//panic(err)
 		}
 	}
 	// Implement additional database types here
@@ -24,7 +27,12 @@ func DBInit(config model.Config) {
 
 func GetDevices(c *fiber.Ctx) error {
 	//var devices []model.Device
-	devices, _ := db.GetDevices()
+	devices, err := db.GetDevices()
+	if err != nil {
+		logger.Info("[device][GetDevices] Error reading devices from database")
+		logger.Info("[device][GetDevices] Error: " + err.Error())
+	}
+
 	return c.JSON(devices)
 }
 

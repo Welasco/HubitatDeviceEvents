@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 
+	logger "github.com/Welasco/HubitatDeviceEvents/common/logger"
 	"github.com/Welasco/HubitatDeviceEvents/device"
 	"github.com/Welasco/HubitatDeviceEvents/model"
 	"github.com/Welasco/HubitatDeviceEvents/transport"
@@ -21,16 +22,18 @@ func LoadConfig() {
 		Password:         os.Getenv("Password"),
 		DatabaseType:     os.Getenv("DatabaseType"),
 	}
+
 }
 
 func init() {
 	LoadConfig()
-
+	logger.Init(os.Getenv("logPath"), os.Getenv("logLevel"))
 }
 
 func main() {
 	app := transport.Setup()
 	device.DBInit(config)
 	fmt.Println("Hello World")
-	app.Listen("3000")
+	logger.Info("Starting server on port 3000")
+	app.Listen(":3000")
 }

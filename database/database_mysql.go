@@ -6,6 +6,7 @@ import (
 	"log"
 	"time"
 
+	logger "github.com/Welasco/HubitatDeviceEvents/common/logger"
 	"github.com/Welasco/HubitatDeviceEvents/model"
 	_ "github.com/go-sql-driver/mysql"
 )
@@ -105,7 +106,8 @@ func (mysqldb *Mysql_db) CreateDB() error {
 
 	dbCreate, err := sql.Open("mysql", mysqldb.ConnectionString)
 	if err != nil {
-		log.Printf("Error %s when opening DB\n", err)
+		logger.Error("[database][CreateDB] Error initializing database")
+		logger.Error("[database][CreateDB] Error: " + err.Error())
 		return err
 	}
 
@@ -114,8 +116,19 @@ func (mysqldb *Mysql_db) CreateDB() error {
 	res, err := dbCreate.ExecContext(ctx, "CREATE DATABASE IF NOT EXISTS "+mysqldb.DatabaseName)
 	if err != nil {
 		//log.Printf("Error %s when creating DB\n", err)
+		//panic(err)
+		logger.Error("[database][CreateDB] Error initializing database")
+		logger.Error("[database][CreateDB] Error: " + err.Error())
 		return err
 	}
+
+	err = db.PingContext(ctx)
+	if err != nil {
+		//log.Printf("Errors %s pinging DB", err)
+		logger.Error("[database][CreateDB] Error initializing database PingContext")
+		logger.Error("[database][CreateDB] Error: " + err.Error())
+	}
+
 	no, err := res.RowsAffected()
 	if err != nil {
 		log.Printf("Error %s when fetching rows", err)
