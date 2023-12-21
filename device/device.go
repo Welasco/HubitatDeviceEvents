@@ -54,14 +54,21 @@ func GetDevice(c *fiber.Ctx) error {
 	id := c.Params("id")
 	int_id, _ := strconv.Atoi(id)
 	var device model.Device
-	device, _ = db.GetDevice(int_id)
+	device, err := db.GetDevice(int_id)
+	if err != nil {
+		logger.Info("[device][GetDevice] Error reading devices from database")
+		logger.Info("[device][GetDevice] Error: " + err.Error())
+		return c.Status(404).JSON(fiber.Map{"status": "error", "message": "Device not found", "data": err.Error()})
+	}
 	return c.JSON(device)
 }
 
 func AddDevice(c *fiber.Ctx) error {
 	var device model.Device
 	if err := c.BodyParser(&device); err != nil {
-		c.Status(503).SendString(err.Error())
+		logger.Info("[device][AddDevice] Error adding device")
+		logger.Info("[device][AddDevice] Error: " + err.Error())
+		c.Status(400).JSON(fiber.Map{"status": "error", "message": "Error parsing body", "data": err.Error()})
 		return err
 	}
 	db.AddDevice(&device)
@@ -72,19 +79,25 @@ func DeleteDevice(c *fiber.Ctx) error {
 	id := c.Params("id")
 	int_id, _ := strconv.Atoi(id)
 	var device model.Device
-	device, _ = db.GetDevice(int_id)
+	device, err := db.GetDevice(int_id)
+	if err != nil {
+		logger.Info("[device][DeleteDevice] Error deleting device")
+		logger.Info("[device][DeleteDevice] Error: " + err.Error())
+		c.Status(404).JSON(fiber.Map{"status": "error", "message": "Device not found", "data": err.Error()})
+	}
 	if device.DisplayName == "" {
-		c.Status(500).SendString("No device found with given ID")
+		c.Status(404).JSON(fiber.Map{"status": "error", "message": "Device not found", "data": err.Error()})
+		//c.Status(500).SendString("No device found with given ID")
 		return nil
 	}
 	db.DeleteDevice(int_id)
-	return c.SendString("Device successfully deleted")
+	return c.JSON(fiber.Map{"status": "success", "message": "Device deleted"})
 }
 
 func UpdateDevice(c *fiber.Ctx) error {
 	var device model.Device
 	if err := c.BodyParser(&device); err != nil {
-		c.Status(503).SendString(err.Error())
+		c.Status(400).JSON(fiber.Map{"status": "error", "message": "Error parsing body", "data": err.Error()})
 		return err
 	}
 	db.UpdateDevice(&device)

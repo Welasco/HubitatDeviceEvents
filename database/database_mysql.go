@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"log"
 	"strings"
 	"time"
@@ -24,12 +25,12 @@ func (mysqldb *Mysql_db) InitDB() (*sql.DB, error) {
 }
 
 func (mysqldb *Mysql_db) GetDevice(id int) (model.Device, error) {
-	logger.Debug("[database][GetDevice] Getting device with id " + string(id))
+	logger.Debug("[database][GetDevice] Getting device with id " + fmt.Sprint(id))
 	var device model.Device
 	row := db.QueryRow("SELECT id, name, displayname, label FROM devices WHERE id = ?", id)
 	err := row.Scan(&device.Id, &device.Name, &device.DisplayName, &device.Label)
 	if err != nil {
-		logger.Error("[database][GetDevice] Error getting device with id " + string(id))
+		logger.Error("[database][GetDevice] Error getting device with id " + fmt.Sprint(id))
 		logger.Error("[database][GetDevice] Error: " + err.Error())
 		return device, err
 	}
