@@ -13,11 +13,11 @@ type Database interface {
 
 	GetDevices() ([]model.Device, error)
 
-	AddDevice(device *model.Device) string
+	AddDevice(device *model.Device) error
 
-	DeleteDevice(id int) string
+	DeleteDevice(id int) error
 
-	UpdateDevice(device *model.Device) string
+	UpdateDevice(device *model.Device) error
 
 	GetDeviceEvents() error
 }

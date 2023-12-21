@@ -13,11 +13,11 @@ var db database.Database
 func DBInit(config model.Config) {
 	// Check if database is already initialized
 	if config.DatabaseType == "mysql" {
-		db, err := database.NewMysqlDB(config.ConnectionString, config.DatabaseName, 1433, config.UserName, config.Password)
+		var err error
+		db, err = database.NewMysqlDB(config.ConnectionString, config.DatabaseName, 1433, config.UserName, config.Password)
 		if err != nil {
 			panic(err)
 		}
-		db = db
 	}
 	// Implement additional database types here
 }
