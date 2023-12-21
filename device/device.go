@@ -1,21 +1,33 @@
 package device
 
 import (
+	"os"
 	"strconv"
 
 	logger "github.com/Welasco/HubitatDeviceEvents/common/logger"
 	"github.com/Welasco/HubitatDeviceEvents/database"
 	"github.com/Welasco/HubitatDeviceEvents/model"
 	"github.com/gofiber/fiber/v2"
+	_ "github.com/joho/godotenv/autoload"
 )
 
 var db database.Database
 
-func DBInit(config model.Config) {
+var config model.Config
+
+func LoadConfig() {
+	config = model.Config{
+		ConnectionString: os.Getenv("ConnectionString"),
+		DatabaseType:     os.Getenv("DatabaseType"),
+	}
+}
+
+func DBInit() {
+	LoadConfig()
 	// Check if database is already initialized
 	if config.DatabaseType == "mysql" {
 		var err error
-		db, err = database.NewMysqlDB(config.ConnectionString, config.DatabaseName, 1433, config.UserName, config.Password)
+		db, err = database.NewDB(config.ConnectionString)
 		if err != nil {
 			logger.Error("[device][DBInit] Error initializing database")
 			logger.Error("[device][DBInit] " + err.Error())

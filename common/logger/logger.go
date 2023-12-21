@@ -1,6 +1,7 @@
 package logger
 
 import (
+	"io"
 	"log"
 	"os"
 )
@@ -39,7 +40,9 @@ func Init(file string, llevel string) {
 		log.Panic(err)
 	}
 
-	l.SetOutput(logFile)
+	multi := io.MultiWriter(logFile, os.Stdout)
+	l.SetOutput(multi)
+	//l.SetOutput(logFile)
 	//l.SetFlags(log.Lshortfile | log.LstdFlags)
 	l.SetFlags(log.LstdFlags)
 }

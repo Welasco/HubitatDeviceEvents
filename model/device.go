@@ -17,7 +17,6 @@ package model
 // }
 
 type Device struct {
-	//gorm.Model
 	Id          string `json:"Id"`
 	Name        string `json:"name"`
 	DisplayName string `json:"displayname"`

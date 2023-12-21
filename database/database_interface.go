@@ -1,14 +1,12 @@
 package database
 
 import (
-	"database/sql"
+	//"database/sql"
 
 	"github.com/Welasco/HubitatDeviceEvents/model"
 )
 
 type Database interface {
-	InitDB() (*sql.DB, error)
-
 	GetDevice(id int) (model.Device, error)
 
 	GetDevices() ([]model.Device, error)
