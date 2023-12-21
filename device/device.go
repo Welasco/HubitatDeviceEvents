@@ -24,21 +24,23 @@ func LoadConfig() {
 
 func DBInit() {
 	LoadConfig()
-	// Check if database is already initialized
+	logger.Info("[device][DBInit] Initializing database")
 	if config.DatabaseType == "mysql" {
 		var err error
-		db, err = database.NewDB(config.ConnectionString)
+		db, err = database.NewMySQLDB(config.ConnectionString)
 		if err != nil {
 			logger.Error("[device][DBInit] Error initializing database")
 			logger.Error("[device][DBInit] " + err.Error())
 			//panic(err)
 		}
+	} else {
+		logger.Error("[device][DBInit] Database type " + config.DatabaseType + " not supported")
 	}
+
 	// Implement additional database types here
 }
 
 func GetDevices(c *fiber.Ctx) error {
-	//var devices []model.Device
 	devices, err := db.GetDevices()
 	if err != nil {
 		logger.Info("[device][GetDevices] Error reading devices from database")
@@ -52,7 +54,6 @@ func GetDevice(c *fiber.Ctx) error {
 	id := c.Params("id")
 	int_id, _ := strconv.Atoi(id)
 	var device model.Device
-	//db.Find(&device, id)
 	device, _ = db.GetDevice(int_id)
 	return c.JSON(device)
 }
@@ -60,11 +61,9 @@ func GetDevice(c *fiber.Ctx) error {
 func AddDevice(c *fiber.Ctx) error {
 	var device model.Device
 	if err := c.BodyParser(&device); err != nil {
-		//c.Status(503).Send(err)
 		c.Status(503).SendString(err.Error())
 		return err
 	}
-
 	db.AddDevice(&device)
 	return c.JSON(device)
 }
@@ -85,11 +84,9 @@ func DeleteDevice(c *fiber.Ctx) error {
 func UpdateDevice(c *fiber.Ctx) error {
 	var device model.Device
 	if err := c.BodyParser(&device); err != nil {
-		//c.Status(503).Send(err)
 		c.Status(503).SendString(err.Error())
 		return err
 	}
-
 	db.UpdateDevice(&device)
 	return c.JSON(device)
 }

@@ -2,7 +2,6 @@ package transport
 
 import (
 	"github.com/Welasco/HubitatDeviceEvents/device"
-	//"github.com/gofiber/fiber"
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -17,7 +16,6 @@ func setupRoutes(app *fiber.App) {
 	app.Post("/api/v1/device", device.AddDevice)
 	app.Delete("/api/v1/device/:id", device.DeleteDevice)
 	app.Put("/api/v1/device", device.UpdateDevice)
-	// missing update
 }
 
 // Setup - set's up our fiber app and the routes
