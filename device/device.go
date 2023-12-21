@@ -72,7 +72,7 @@ func DeleteDevice(c *fiber.Ctx) error {
 
 func UpdateDevice(c *fiber.Ctx) error {
 	var device model.Device
-	if err := c.BodyParser(device); err != nil {
+	if err := c.BodyParser(&device); err != nil {
 		//c.Status(503).Send(err)
 		c.Status(503).SendString(err.Error())
 		return err
