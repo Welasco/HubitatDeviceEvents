@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"log"
+	"strings"
 	"time"
 
 	logger "github.com/Welasco/HubitatDeviceEvents/common/logger"
@@ -79,7 +80,7 @@ func (mysqldb *Mysql_db) DeleteDevice(id int) error {
 	// if err != nil {
 	// 	return err
 	// }
-	_, err := db.Exec("DELETE FROM video_games WHERE id = ?", id)
+	_, err := db.Exec("DELETE FROM devices WHERE id = ?", id)
 	return err
 }
 
@@ -103,8 +104,8 @@ func (mysqldb *Mysql_db) CreateDB() error {
 	// );
 
 	// root:password@tcp(127.0.0.1:3306)/hubitatdeviceevents
-
-	dbCreate, err := sql.Open("mysql", mysqldb.ConnectionString)
+	nodb_connectionstring := strings.SplitAfter(mysqldb.ConnectionString, "/")
+	dbCreate, err := sql.Open("mysql", nodb_connectionstring[0])
 	if err != nil {
 		logger.Error("[database][CreateDB] Error initializing database")
 		logger.Error("[database][CreateDB] Error: " + err.Error())
@@ -122,7 +123,7 @@ func (mysqldb *Mysql_db) CreateDB() error {
 		return err
 	}
 
-	err = db.PingContext(ctx)
+	err = dbCreate.PingContext(ctx)
 	if err != nil {
 		//log.Printf("Errors %s pinging DB", err)
 		logger.Error("[database][CreateDB] Error initializing database PingContext")

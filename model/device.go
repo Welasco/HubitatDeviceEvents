@@ -18,8 +18,8 @@ package model
 
 type Device struct {
 	//gorm.Model
-	Id          int    `json:"Id"`
+	Id          string `json:"Id"`
 	Name        string `json:"name"`
 	DisplayName string `json:"displayname"`
-	Label       int    `json:"label"`
+	Label       string `json:"label"`
 }

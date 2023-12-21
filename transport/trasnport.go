@@ -16,6 +16,7 @@ func setupRoutes(app *fiber.App) {
 	app.Get("/api/v1/device/:id", device.GetDevice)
 	app.Post("/api/v1/device", device.AddDevice)
 	app.Delete("/api/v1/device/:id", device.DeleteDevice)
+	// missing update
 }
 
 // Setup - set's up our fiber app and the routes
