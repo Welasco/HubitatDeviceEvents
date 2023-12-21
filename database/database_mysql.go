@@ -1,7 +1,10 @@
 package database
 
 import (
+	"context"
 	"database/sql"
+	"log"
+	"time"
 
 	"github.com/Welasco/HubitatDeviceEvents/model"
 	_ "github.com/go-sql-driver/mysql"
@@ -88,6 +91,62 @@ func (mysqldb *Mysql_db) UpdateDevice(device *model.Device) error {
 	return err
 }
 
+func (mysqldb *Mysql_db) CreateDB() error {
+
+	// CREATE TABLE video_games
+	// (
+	// 	id    bigint unsigned not null primary key auto_increment,
+	// 	name  VARCHAR(255)    NOT NULL,
+	// 	displayname VARCHAR(255)    NOT NULL,
+	// 	label  VARCHAR(255)         NOT NULL
+	// );
+
+	// root:password@tcp(127.0.0.1:3306)/hubitatdeviceevents
+
+	dbCreate, err := sql.Open("mysql", mysqldb.ConnectionString)
+	if err != nil {
+		log.Printf("Error %s when opening DB\n", err)
+		return err
+	}
+
+	ctx, cancelfunc := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancelfunc()
+	res, err := dbCreate.ExecContext(ctx, "CREATE DATABASE IF NOT EXISTS "+mysqldb.DatabaseName)
+	if err != nil {
+		//log.Printf("Error %s when creating DB\n", err)
+		return err
+	}
+	no, err := res.RowsAffected()
+	if err != nil {
+		log.Printf("Error %s when fetching rows", err)
+		return err
+	}
+	log.Printf("rows affected: %d\n", no)
+	dbCreate.Close()
+
+	dbCreate, err = sql.Open("mysql", mysqldb.ConnectionString)
+	if err != nil {
+		log.Printf("Error %s when opening DB\n", err)
+		return err
+	}
+
+	res, err = dbCreate.ExecContext(ctx, "CREATE TABLE IF NOT EXISTS devices (id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY, name VARCHAR(255) NOT NULL, displayname VARCHAR(255) NOT NULL, label VARCHAR(255) NOT NULL)")
+	if err != nil {
+		//log.Printf("Error %s when creating DB\n", err)
+		return err
+	}
+
+	no, err = res.RowsAffected()
+	if err != nil {
+		log.Printf("Error %s when fetching rows", err)
+		return err
+	}
+	log.Printf("rows affected: %d\n", no)
+	dbCreate.Close()
+	//_, err := dbCreateTable.ExecContext("CREATE TABLE IF NOT EXISTS devices (id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY, name VARCHAR(255) NOT NULL, displayname VARCHAR(255) NOT NULL, label VARCHAR(255) NOT NULL)")
+	return err
+}
+
 func (mysqldb *Mysql_db) GetDeviceEvents() error {
 	return nil
 }
@@ -104,6 +163,7 @@ func NewMysqlDB(ConnectionString string, DatabaseName string, Port int, UserName
 	}
 	var err error
 	//mysqldb.DB, err = mysqldb.InitDB()
+	err = mysqldb.CreateDB()
 	db, err = mysqldb.InitDB()
 	return &mysqldb, err
 }

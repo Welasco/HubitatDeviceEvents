@@ -19,4 +19,4 @@
 // 		panic("Failed to connect to database")
 // 	}
 // 	fmt.Println("Database connection successfully opened")
-// }
+// };
