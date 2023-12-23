@@ -1,14 +1,14 @@
 name: Docker Build Hubitat Device Events (AMD64)
 
 on:
-  push:
+  #push:
 
   workflow_dispatch:
     inputs:
         tag:
           description: 'Define the tag to use for the build'
           required: true
-          default: 'welasco/hubitat-device-events:latest, welasco/hubitat-device-events:v1.0.0'
+          default: 'welasco/hubitatdeviceevents:latest, welasco/hubitatdeviceevents:v1.0.0'
           type: string
 
 jobs:
