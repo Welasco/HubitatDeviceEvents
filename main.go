@@ -18,5 +18,11 @@ func main() {
 	app := transport.Setup()
 	device.DBInit()
 	logger.Info("[main][main] Starting server on port 3000")
-	app.Listen(":3000")
+
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "3000"
+	}
+
+	app.Listen(":" + port)
 }
