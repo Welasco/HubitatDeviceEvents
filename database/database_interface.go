@@ -17,5 +17,7 @@ type Database interface {
 
 	UpdateDevice(device *model.Device) error
 
-	GetDeviceEvents() error
+	GetDeviceEvents() ([]model.DeviceEvent, error)
+
+	RegisterDeviceEvent(device *model.DeviceEvent) error
 }

@@ -11,6 +11,8 @@ func helloWorld(c *fiber.Ctx) error {
 
 func setupRoutes(app *fiber.App) {
 	app.Get("/", helloWorld)
+	app.Get("/api/v1/device/event", device.GetDeviceEvents)
+	app.Post("/api/v1/device/event", device.RegisterDeviceEvent)
 	app.Get("/api/v1/device", device.GetDevices)
 	app.Get("/api/v1/device/:id", device.GetDevice)
 	app.Post("/api/v1/device", device.AddDevice)
