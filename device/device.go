@@ -2,7 +2,6 @@ package device
 
 import (
 	"os"
-	"strconv"
 
 	logger "github.com/Welasco/HubitatDeviceEvents/common/logger"
 	"github.com/Welasco/HubitatDeviceEvents/database"
@@ -43,8 +42,8 @@ func DBInit() {
 func GetDevices(c *fiber.Ctx) error {
 	devices, err := db.GetDevices()
 	if err != nil {
-		logger.Info("[device][GetDevices] Error reading devices from database")
-		logger.Info("[device][GetDevices] Error: " + err.Error())
+		logger.Error("[device][GetDevices] Error reading devices from database")
+		logger.Error("[device][GetDevices] Error: " + err.Error())
 	}
 
 	return c.JSON(devices)
@@ -52,12 +51,11 @@ func GetDevices(c *fiber.Ctx) error {
 
 func GetDevice(c *fiber.Ctx) error {
 	id := c.Params("id")
-	int_id, _ := strconv.Atoi(id)
 	var device model.Device
-	device, err := db.GetDevice(int_id)
+	device, err := db.GetDevice(id)
 	if err != nil {
-		logger.Info("[device][GetDevice] Error reading devices from database")
-		logger.Info("[device][GetDevice] Error: " + err.Error())
+		logger.Error("[device][GetDevice] Error reading devices from database")
+		logger.Error("[device][GetDevice] Error: " + err.Error())
 		return c.Status(404).JSON(fiber.Map{"status": "error", "message": "Device not found", "data": err.Error()})
 	}
 	return c.JSON(device)
@@ -66,32 +64,36 @@ func GetDevice(c *fiber.Ctx) error {
 func AddDevice(c *fiber.Ctx) error {
 	var device model.Device
 	if err := c.BodyParser(&device); err != nil {
-		logger.Info("[device][AddDevice] Error adding device")
-		logger.Info("[device][AddDevice] Error: " + err.Error())
+		logger.Error("[device][AddDevice] Error adding device")
+		logger.Error("[device][AddDevice] Error: " + err.Error())
 		c.Status(400).JSON(fiber.Map{"status": "error", "message": "Error parsing body", "data": err.Error()})
 		return err
 	}
-	db.AddDevice(&device)
+	err := db.AddDevice(&device)
+	if err != nil {
+		logger.Error("[device][AddDevice] Error adding device")
+		logger.Error("[device][AddDevice] Error: " + err.Error())
+		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Error adding device", "data": err.Error()})
+	}
 	return c.JSON(device)
 }
 
 func DeleteDevice(c *fiber.Ctx) error {
 	id := c.Params("id")
-	int_id, _ := strconv.Atoi(id)
 	var device model.Device
-	device, err := db.GetDevice(int_id)
+	device, err := db.GetDevice(id)
 	if err != nil {
-		logger.Info("[device][DeleteDevice] Error checking device existance before deleting")
-		logger.Info("[device][DeleteDevice] Error: " + err.Error())
+		logger.Error("[device][DeleteDevice] Error checking device existance before deleting")
+		logger.Error("[device][DeleteDevice] Error: " + err.Error())
 		return c.Status(404).JSON(fiber.Map{"status": "error", "message": "Device not found", "data": err.Error()})
 	}
 	if device.Id == "" {
 		return c.Status(404).JSON(fiber.Map{"status": "error", "message": "Device not found", "data": err.Error()})
 	}
-	err = db.DeleteDevice(int_id)
+	err = db.DeleteDevice(id)
 	if err != nil {
-		logger.Info("[device][DeleteDevice] Error deleting device")
-		logger.Info("[device][DeleteDevice] Error: " + err.Error())
+		logger.Error("[device][DeleteDevice] Error deleting device")
+		logger.Error("[device][DeleteDevice] Error: " + err.Error())
 		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Unable to delete device, check if there are no events associated", "data": err.Error()})
 	}
 	return c.JSON(fiber.Map{"status": "success", "message": "Device deleted"})
@@ -100,15 +102,15 @@ func DeleteDevice(c *fiber.Ctx) error {
 func UpdateDevice(c *fiber.Ctx) error {
 	var device model.Device
 	if err := c.BodyParser(&device); err != nil {
-		logger.Info("[device][UpdateDevice] Error updating device")
-		logger.Info("[device][UpdateDevice] Error: " + err.Error())
+		logger.Error("[device][UpdateDevice] Error updating device")
+		logger.Error("[device][UpdateDevice] Error: " + err.Error())
 		return c.Status(400).JSON(fiber.Map{"status": "error", "message": "Error parsing body", "data": err.Error()})
 	}
 
 	err := db.UpdateDevice(&device)
 	if err != nil {
-		logger.Info("[device][DeleteDevice] Error deleting device")
-		logger.Info("[device][DeleteDevice] Error: " + err.Error())
+		logger.Error("[device][UpdateDevice] Error deleting device")
+		logger.Error("[device][UpdateDevice] Error: " + err.Error())
 		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Unable to delete device, check if there are no events associated", "data": err.Error()})
 	}
 	return c.JSON(device)
@@ -117,8 +119,8 @@ func UpdateDevice(c *fiber.Ctx) error {
 func GetDeviceEvents(c *fiber.Ctx) error {
 	deviceevents, err := db.GetDeviceEvents()
 	if err != nil {
-		logger.Info("[device][GetDevices] Error reading devices from database")
-		logger.Info("[device][GetDevices] Error: " + err.Error())
+		logger.Error("[device][GetDeviceEvents] Error reading devices from database")
+		logger.Error("[device][GetDeviceEvents] Error: " + err.Error())
 	}
 
 	return c.JSON(deviceevents)
@@ -126,12 +128,11 @@ func GetDeviceEvents(c *fiber.Ctx) error {
 
 func GetDeviceEventId(c *fiber.Ctx) error {
 	id := c.Params("id")
-	int_id, _ := strconv.Atoi(id)
 	var deviceevents []model.DeviceEvent
-	deviceevents, err := db.GetDeviceEventId(int_id)
+	deviceevents, err := db.GetDeviceEventId(id)
 	if err != nil {
-		logger.Info("[device][GetDevice] Error reading devices from database")
-		logger.Info("[device][GetDevice] Error: " + err.Error())
+		logger.Error("[device][GetDeviceEventId] Error reading events from device from database")
+		logger.Error("[device][GetDeviceEventId] Error: " + err.Error())
 		return c.Status(404).JSON(fiber.Map{"status": "error", "message": "Device not found", "data": err.Error()})
 	}
 	return c.JSON(deviceevents)
@@ -140,13 +141,19 @@ func GetDeviceEventId(c *fiber.Ctx) error {
 func RegisterDeviceEvent(c *fiber.Ctx) error {
 	var devicecontent model.Content
 	//var deviceevent model.DeviceEvent
-	logger.Info("[device][ReceiveDeviceEvents] Received device events")
-	logger.Info("[device][ReceiveDeviceEvents] Event: " + string(c.BodyRaw()))
+	logger.Debug("[device][RegisterDeviceEvent] Received device events")
+	logger.Debug("[device][RegisterDeviceEvent] Event: " + string(c.BodyRaw()))
 	//if err := c.BodyParser(&deviceevent); err != nil {
 	if err := c.BodyParser(&devicecontent); err != nil {
-		c.Status(400).JSON(fiber.Map{"status": "error", "message": "Error parsing body", "data": err.Error()})
-		return err
+		logger.Error("[device][RegisterDeviceEvent] Error reading devices from database")
+		logger.Error("[device][RegisterDeviceEvent] Error: " + err.Error())
+		return c.Status(400).JSON(fiber.Map{"status": "error", "message": "Error parsing body", "data": err.Error()})
 	}
-	db.RegisterDeviceEvent(&devicecontent.DeviceEvent)
+	err := db.RegisterDeviceEvent(&devicecontent.DeviceEvent)
+	if err != nil {
+		logger.Error("[device][RegisterDeviceEvent] Error Registering device event")
+		logger.Error("[device][RegisterDeviceEvent] Error: " + err.Error())
+		return c.Status(500).JSON(fiber.Map{"status": "error", "message": "Error registering device event", "data": err.Error()})
+	}
 	return c.SendString("{}")
 }

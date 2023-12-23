@@ -7,19 +7,19 @@ import (
 )
 
 type Database interface {
-	GetDevice(id int) (model.Device, error)
+	GetDevice(id string) (model.Device, error)
 
 	GetDevices() ([]model.Device, error)
 
 	AddDevice(device *model.Device) error
 
-	DeleteDevice(id int) error
+	DeleteDevice(id string) error
 
 	UpdateDevice(device *model.Device) error
 
 	GetDeviceEvents() ([]model.DeviceEvent, error)
 
-	GetDeviceEventId(id int) ([]model.DeviceEvent, error)
+	GetDeviceEventId(id string) ([]model.DeviceEvent, error)
 
 	RegisterDeviceEvent(device *model.DeviceEvent) error
 }
