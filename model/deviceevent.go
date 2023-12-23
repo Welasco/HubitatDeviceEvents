@@ -1,18 +1,5 @@
 package model
 
-// {
-//     "content": {
-//         "name": "switch",
-//         "value": "off",
-//         "displayName": "Office",
-//         "deviceId": "187",
-//         "descriptionText": "Office was turned off [digital]",
-//         "unit": null,
-//         "type": "digital",
-//         "data": null
-//     }
-// }
-
 type Content struct {
 	DeviceEvent DeviceEvent `json:"content"`
 }

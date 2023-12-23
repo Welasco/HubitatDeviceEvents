@@ -140,10 +140,8 @@ func GetDeviceEventId(c *fiber.Ctx) error {
 
 func RegisterDeviceEvent(c *fiber.Ctx) error {
 	var devicecontent model.Content
-	//var deviceevent model.DeviceEvent
 	logger.Debug("[device][RegisterDeviceEvent] Received device events")
 	logger.Debug("[device][RegisterDeviceEvent] Event: " + string(c.BodyRaw()))
-	//if err := c.BodyParser(&deviceevent); err != nil {
 	if err := c.BodyParser(&devicecontent); err != nil {
 		logger.Error("[device][RegisterDeviceEvent] Error reading devices from database")
 		logger.Error("[device][RegisterDeviceEvent] Error: " + err.Error())

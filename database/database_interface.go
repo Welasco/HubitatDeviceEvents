@@ -1,8 +1,6 @@
 package database
 
 import (
-	//"database/sql"
-
 	"github.com/Welasco/HubitatDeviceEvents/model"
 )
 
