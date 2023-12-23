@@ -241,6 +241,31 @@ func (mysqldb *Mysql_db) GetDeviceEvents() ([]model.DeviceEvent, error) {
 	return deviceevents, nil
 }
 
+func (mysqldb *Mysql_db) GetDeviceEventId(id int) ([]model.DeviceEvent, error) {
+	logger.Debug("[database][GetDeviceEventId] Getting events from device with id " + fmt.Sprint(id))
+	deviceevents := []model.DeviceEvent{}
+	rows, err := db.Query("SELECT timestamp, name, value, displayName, deviceId, descriptionText, unit, type, data FROM deviceevents WHERE deviceId = ?", id)
+	if err != nil {
+		logger.Error("[database][GetDeviceEventId] Error getting events from device with id " + fmt.Sprint(id))
+		logger.Error("[database][GetDeviceEventId] Error: " + err.Error())
+		return deviceevents, err
+	}
+
+	for rows.Next() {
+		var deviceevent model.DeviceEvent
+		err = rows.Scan(&deviceevent.TimeStamp, &deviceevent.Name, &deviceevent.Value, &deviceevent.DisplayName, &deviceevent.DeviceId, &deviceevent.DescriptionText, &deviceevent.Unit, &deviceevent.Type, &deviceevent.Data)
+		if err != nil {
+			logger.Error("[database][GetDeviceEventId] Error scanning events from device with id " + fmt.Sprint(id) + " rows")
+			logger.Error("[database][GetDeviceEventId] Error: " + err.Error())
+			return deviceevents, err
+		}
+		deviceevents = append(deviceevents, deviceevent)
+	}
+	json, _ := json.Marshal(deviceevents)
+	logger.Debug("[database][GetDeviceEventId] Getting events from device with id " + fmt.Sprint(id) + ": " + string(json))
+	return deviceevents, nil
+}
+
 func (mysqldb *Mysql_db) RegisterDeviceEvent(event *model.DeviceEvent) error {
 	logger.Debug("[database][RegisterDeviceEvent] Registering device event")
 	_, err := db.Exec("INSERT INTO deviceevents (name, value, displayName, deviceId, descriptionText, unit, type, data) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", event.Name, event.Value, event.DisplayName, event.DeviceId, event.DescriptionText, event.Unit, event.Type, event.Data)

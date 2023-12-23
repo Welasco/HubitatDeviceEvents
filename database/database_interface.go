@@ -19,5 +19,7 @@ type Database interface {
 
 	GetDeviceEvents() ([]model.DeviceEvent, error)
 
+	GetDeviceEventId(id int) ([]model.DeviceEvent, error)
+
 	RegisterDeviceEvent(device *model.DeviceEvent) error
 }

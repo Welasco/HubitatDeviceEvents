@@ -124,6 +124,19 @@ func GetDeviceEvents(c *fiber.Ctx) error {
 	return c.JSON(deviceevents)
 }
 
+func GetDeviceEventId(c *fiber.Ctx) error {
+	id := c.Params("id")
+	int_id, _ := strconv.Atoi(id)
+	var deviceevents []model.DeviceEvent
+	deviceevents, err := db.GetDeviceEventId(int_id)
+	if err != nil {
+		logger.Info("[device][GetDevice] Error reading devices from database")
+		logger.Info("[device][GetDevice] Error: " + err.Error())
+		return c.Status(404).JSON(fiber.Map{"status": "error", "message": "Device not found", "data": err.Error()})
+	}
+	return c.JSON(deviceevents)
+}
+
 func RegisterDeviceEvent(c *fiber.Ctx) error {
 	var devicecontent model.Content
 	//var deviceevent model.DeviceEvent
