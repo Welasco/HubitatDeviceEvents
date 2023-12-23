@@ -1,0 +1,13 @@
+
+## Docker Run Sample
+docker run -d -p 3000:3000 -e PORT=3000 -e 'ConnectionString=root:password@tcp(mysql.localdomain:3306)/hubitatdeviceevents' -e DatabaseType=mysql -e HubitatGetDevicesUrl=http://hubitathub.localdomain/apps/api/218/devices?access_token=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx -e logLevel=Deb -e logPath=hubitatdeviceevents.log
+
+## Curl Samples
+
+curl -H "Content-Type: application/json" --request GET localhost:3000/api/v1/device
+curl -v -H "Content-Type: application/json" --request POST --data '{"Id":"1","Name":"TestName1","Label":"TestLabel4","Type":"TestType1","Room":"Room1"}' localhost:3000/api/v1/device
+curl -v -H "Content-Type: application/json" --request POST --data '{"content":{"name":"switch","value":"on","displayName":"Office","deviceId":"1","descriptionText":"Office was turned on [digital]","unit":null,"type":"digital","data":null}}' localhost:3000/api/v1/device/events
+curl -H "Content-Type: application/json" --request GET --data '{}' localhost:3000/api/v1/device/events
+curl -H "Content-Type: application/json" --request GET localhost:3000/api/v1/device/252/event
+curl -v --request DELETE localhost:3000/api/v1/device/6
+curl -H "Content-Type: application/json" --request PUT --data '{"Id":"4","Name":"TestName3","DisplayName":"TestDisplayName3","Label":"TestLabel3", "xxx":"xxx"}' localhost:3000/api/v1/device
