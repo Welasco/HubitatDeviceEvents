@@ -54,3 +54,23 @@ CREATE TABLE IF NOT EXISTS deviceevents (
 );
 
 INSERT INTO deviceevents (name, value, displayName, deviceId, descriptionText, unit, type, data) VALUES ('device1', 'value1', 'displayName1', 1, 'description1', NULL, 'type1', 'data1');
+
+-- Quary Samples:
+
+-- select * from deviceevents limit 1;
+
+-- select * from deviceevents where deviceid=12;
+
+-- select * from deviceevents where timestamp BETWEEN '2024-01-01 00:00:00' and '2024-01-01 02:29:46';
+
+-- select * from deviceevents where deviceid='12' and timestamp BETWEEN '2024-01-01 00:00:00' and '2024-01-01 02:29:46';
+
+-- select count(*) from deviceevents;
+
+-- select deviceid, count(*) as event_count from deviceevents group by deviceid;
+
+-- select * from deviceevents inner join devices on deviceid=id where deviceid=252;
+
+-- select timestamp, deviceevents.name, value, displayName, label from deviceevents inner join devices on deviceid=id where deviceid=252;
+
+-- select deviceid,displayName, count(*) as event_count from deviceevents group by deviceid;
