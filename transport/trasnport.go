@@ -3,6 +3,7 @@ package transport
 import (
 	"github.com/Welasco/HubitatDeviceEvents/device"
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/cors"
 )
 
 func helloWorld(c *fiber.Ctx) error {
@@ -25,6 +26,8 @@ func setupRoutes(app *fiber.App) {
 // returns a pointer to app
 func Setup() *fiber.App {
 	app := fiber.New()
+	app.Use(cors.New())
 	setupRoutes(app)
+
 	return app
 }
