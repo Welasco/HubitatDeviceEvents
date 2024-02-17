@@ -11,3 +11,4 @@ curl -H "Content-Type: application/json" --request GET --data '{}' localhost:300
 curl -H "Content-Type: application/json" --request GET localhost:3000/api/v1/device/252/event
 curl -v --request DELETE localhost:3000/api/v1/device/6
 curl -H "Content-Type: application/json" --request PUT --data '{"Id":"4","Name":"TestName3","DisplayName":"TestDisplayName3","Label":"TestLabel3", "xxx":"xxx"}' localhost:3000/api/v1/device
+curl -H "Content-Type: application/json" --request GET "localhost:3000/api/v1/device/12/event?start=2024-01-01T00:00:00+06:00&end=2024-01-01T02:29:46+06:00"

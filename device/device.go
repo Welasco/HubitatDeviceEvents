@@ -129,12 +129,19 @@ func GetDeviceEvents(c *fiber.Ctx) error {
 func GetDeviceEventId(c *fiber.Ctx) error {
 	id := c.Params("id")
 	var deviceevents []model.DeviceEvent
-	deviceevents, err := db.GetDeviceEventId(id)
+	var err error
+	urlQueries := c.Queries()
+	var urlQueriesStuct model.UrlQueries
+	urlQueriesStuct.Start = urlQueries["start"]
+	urlQueriesStuct.End = urlQueries["end"]
+
+	deviceevents, err = db.GetDeviceEventId(id, urlQueriesStuct)
 	if err != nil {
 		logger.Error("[device][GetDeviceEventId] Error reading events from device from database")
 		logger.Error("[device][GetDeviceEventId] Error: " + err.Error())
-		return c.Status(404).JSON(fiber.Map{"status": "error", "message": "Device not found", "data": err.Error()})
+		return c.Status(404).JSON(fiber.Map{"status": "error", "message": "Device not found or invalid query string start or end date.", "data": err.Error()})
 	}
+
 	return c.JSON(deviceevents)
 }
 

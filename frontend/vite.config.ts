@@ -16,8 +16,6 @@ export default defineConfig({
     headers: {
       "Access-Control-Allow-Origin": "*",
       "Access-Control-Allow-Methods": "GET,HEAD,PUT,PATCH,POST,DELETE",
-
-
       "test": "test"
     }
 

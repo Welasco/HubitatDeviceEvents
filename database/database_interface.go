@@ -17,7 +17,7 @@ type Database interface {
 
 	GetDeviceEvents() ([]model.DeviceEvent, error)
 
-	GetDeviceEventId(id string) ([]model.DeviceEvent, error)
+	GetDeviceEventId(id string, timeStamp model.UrlQueries) ([]model.DeviceEvent, error)
 
 	RegisterDeviceEvent(device *model.DeviceEvent) error
 }

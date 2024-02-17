@@ -244,14 +244,26 @@ func (mysqldb *Mysql_db) GetDeviceEvents() ([]model.DeviceEvent, error) {
 	return deviceevents, nil
 }
 
-func (mysqldb *Mysql_db) GetDeviceEventId(id string) ([]model.DeviceEvent, error) {
+func (mysqldb *Mysql_db) GetDeviceEventId(id string, timeStamp model.UrlQueries) ([]model.DeviceEvent, error) {
 	logger.Debug("[database][GetDeviceEventId] Getting events from device with id " + id)
 	deviceevents := []model.DeviceEvent{}
-	rows, err := db.Query("SELECT timestamp, name, value, displayName, deviceId, descriptionText, unit, type, data FROM deviceevents WHERE deviceId = ?", id)
-	if err != nil {
-		logger.Error("[database][GetDeviceEventId] Error getting events from device with id " + id)
-		logger.Error("[database][GetDeviceEventId] Error: " + err.Error())
-		return deviceevents, err
+	var rows *sql.Rows
+	var err error
+
+	if len(timeStamp.Start) > 0 && len(timeStamp.End) > 0 {
+		rows, err = db.Query("SELECT timestamp, name, value, displayName, deviceId, descriptionText, unit, type, data FROM deviceevents WHERE deviceId = ? and timestamp BETWEEN ? and ?", id, timeStamp.Start, timeStamp.End)
+		if err != nil {
+			logger.Error("[database][GetDeviceEventId] Error getting events from device with id " + id)
+			logger.Error("[database][GetDeviceEventId] Error: " + err.Error())
+			return deviceevents, err
+		}
+	} else {
+		rows, err = db.Query("SELECT timestamp, name, value, displayName, deviceId, descriptionText, unit, type, data FROM deviceevents WHERE deviceId = ?", id)
+		if err != nil {
+			logger.Error("[database][GetDeviceEventId] Error getting events from device with id " + id)
+			logger.Error("[database][GetDeviceEventId] Error: " + err.Error())
+			return deviceevents, err
+		}
 	}
 
 	for rows.Next() {
