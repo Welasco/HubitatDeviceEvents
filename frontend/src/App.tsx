@@ -1,15 +1,77 @@
 import type { Component } from 'solid-js';
 import { createSignal, createResource, For } from 'solid-js';
 
+const apiURL = 'http://vwsstorage.localdomain:3000/api/v1';
+const apiGetDevices = apiURL + '/device';
+const apiGetDevice = apiURL + '/device/{id}';
+const apiGetDeviceEvents = apiURL + '/device/{id}/event?start={start}&end={end}';
+
+interface IDevice {
+  Id: string,
+  name: string,
+  label: string,
+  type: string,
+  room: string
+}
+
+const Device = {
+  Id: '',
+  name: '',
+  label: '',
+  type: '',
+  room: ''
+}
+
 const fetchDevices = async () =>
   (await fetch(`http://vwsstorage.localdomain:3000/api/v1/device`)).json();
 
+async function fetchAPI(apiUri: string) {
+  console.log('fetchAPI: ', apiUri)
+  //return (await fetch(apiUri)).json();
+  try {
+    const response = (await fetch(apiUri)).json();
+    return response
+  } catch (error) {
+    console.error('Error fetching data:', error);
+    throw error
+  }
+}
+
+// function fetchAPI(apiUri: string) {
+//   console.log('fetchAPI: ', apiUri)
+//   try {
+//     const response = async () => (await fetch(apiUri)).json();
+//     return response
+//   } catch (error) {
+//     console.error('Error fetching data:', error);
+//     throw error
+//   }
+// }
+// const fetchDevices = async () =>
+//   (await fetch(`http://vwsstorage.localdomain:3000/api/v1/device`)).json();
+
 const App: Component = () => {
   const [area, setArea] = createSignal('device_details')
-  const [readDevice, setReadDevice] = createSignal(false);
+  const [readDevice, setReadDevice] = createSignal<boolean>(false);
   const toggle = () => setReadDevice(!readDevice())
-  const [devices] = createResource(readDevice, fetchDevices);
+  const [devices] = createResource(readDevice, async() => await fetchAPI(apiGetDevices));
 
+  const [readDeviceDetail, setReadDeviceDetail] = createSignal<IDevice>(Device);
+  //const [deviceDetail] = createResource(readDeviceDetail, async() => await fetchAPI(apiGetDevice.replace('{id}', () => readDeviceDetail().Id)));
+  const [deviceDetail] = createResource(readDeviceDetail, async() => await fetchAPI(apiGetDevice.replace('{id}', readDeviceDetail().Id)));
+
+  //const [devices] = createResource(readDevice, fetchDevices);
+
+  function loadDeviceDetails(device: IDevice) {
+    console.log('loadDeviceDetails: ', device)
+    //setReadDeviceDetail({ ...readDeviceDetail(), Id: device.Id, name: device.name, label: device.label, type: device.type, room: Math.random().toString()})
+    setReadDeviceDetail(device)
+    console.log('readDeviceDetail: ', readDeviceDetail())
+    console.log('test replace: ', apiGetDevice.replace('{id}', readDeviceDetail().Id))
+
+  }
+
+  toggle()
 
   return (
     <>
@@ -36,16 +98,17 @@ const App: Component = () => {
             </select> */}
 
             <select id="deviceList" size="40" class="px-2 w-full">
-            {/* <select id="deviceList" size="40" class="px-2 w-72"> */}
+              {/* <select id="deviceList" size="40" class="px-2 w-72"> */}
               <For each={devices()}>
                 {(device) => (
-                  <option value={device.id}>{device.label}</option>
+                  <option value={device.id} onClick={() => loadDeviceDetails(device)}>{device.label}</option>
                 )}
               </For>
             </select>
 
             <br></br>
             <button onClick={toggle} class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 border border-blue-700 rounded">Load Devices</button>
+
             <br></br>
             {/* <span>{devices.loading && "Loading..."}</span>
             <pre>{JSON.stringify(devices(), null, 2)}</pre> */}
@@ -53,17 +116,30 @@ const App: Component = () => {
         </aside >
         <main class="h-full w-full overflow-auto flex flex-row flex-wrap p-2">
           <nav class="flex border-b">
-            <button class={(area() == 'device_details' ? 'bg-white inline-block border-l border-t border-r rounded-t py-2 px-4 text-blue-700 font-semibold' : 'bg-white inline-block py-2 px-4 text-blue-500 hover:text-blue-800 font-semibold')}  onclick={() => setArea('device_details')}>
+            <button class={(area() == 'device_details' ? 'bg-white inline-block border-l border-t border-r rounded-t py-2 px-4 text-blue-700 font-semibold' : 'bg-white inline-block py-2 px-4 text-blue-500 hover:text-blue-800 font-semibold')} onclick={() => setArea('device_details')}>
               Device Details
             </button>
             <button class={(area() == 'device_events' ? 'bg-white inline-block border-l border-t border-r rounded-t py-2 px-4 text-blue-700 font-semibold' : 'bg-white inline-block py-2 px-4 text-blue-500 hover:text-blue-800 font-semibold')} onclick={() => setArea('device_events')}>
               Device Events
             </button>
           </nav>
-          <div class='w-full md:w-full bg-blue-100 h-[calc(100vh-100px)]'>
+          {/* <div class='w-full md:w-full bg-blue-100 h-[calc(100vh-100px)]'>
             <p class={'text-lg ' + (area() == 'device_details' ? '' : 'hidden')}>Device Details</p>
             <p class={'text-lg ' + (area() == 'device_events' ? '' : 'hidden')}>Device Events</p>
+            <p class={'text-lg ' + (area() == 'device_details' ? '' : 'hidden')}>Test readDeviceDetail() trigger: {readDeviceDetail().Id}</p>
             test333333333333333333333333333333
+            <p class={'text-lg ' + (area() == 'device_details' ? '' : 'hidden')}>{readDeviceDetail() == Device ? '' : JSON.stringify(deviceDetail(), null, 2)}</p>
+          </div> */}
+          <div id='device_details' class={'w-full md:w-full bg-blue-100 h-[calc(100vh-100px)] ' + (area() == 'device_details' ? '' : 'hidden')}>
+            <p class='text-lg'>Device Details</p>
+            <p class='text-lg'>Test readDeviceDetail() trigger: {readDeviceDetail().Id}</p>
+            test333333333333333333333333333333
+            test44444
+            <p class='text-lg'>{readDeviceDetail() == Device ? '' : JSON.stringify(deviceDetail(), null, 2)}</p>
+          </div>
+          <div id='device_events' class={'w-full md:w-full bg-blue-100 h-[calc(100vh-100px)] ' + (area() == 'device_events' ? '' : 'hidden')}>
+            <p class={'text-lg '}>Device Events</p>
+            device_events
           </div>
         </main>
       </div >
