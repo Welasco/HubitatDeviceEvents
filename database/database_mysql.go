@@ -45,7 +45,7 @@ func (mysqldb *Mysql_db) GetDevice(id string) (model.Device, error) {
 func (mysqldb *Mysql_db) GetDevices() ([]model.Device, error) {
 	logger.Debug("[database][GetDevices] Getting devices")
 	devices := []model.Device{}
-	rows, err := db.Query("SELECT id, name, label, type, room FROM devices")
+	rows, err := db.Query("SELECT id, name, label, type, room FROM devices order by label")
 	if err != nil {
 		logger.Error("[database][GetDevices] Error getting GetDevices")
 		logger.Error("[database][GetDevices] Error: " + err.Error())

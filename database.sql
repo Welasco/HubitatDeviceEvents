@@ -75,6 +75,8 @@ INSERT INTO deviceevents (name, value, displayName, deviceId, descriptionText, u
 
 -- select timestamp, deviceevents.name, value, displayName, label from deviceevents inner join devices on deviceid=id where deviceid=252;
 
+-- select * from deviceevents where deviceid='187' and timestamp BETWEEN '2024-02-26T00:00:00+06:00' and '2024-02-26T21:29:46+06:00';
+
 -- select deviceid,displayName, count(*) as event_count from deviceevents group by deviceid;
 
 -- select deviceid,displayName, count(*) as event_count from deviceevents group by deviceid order by event_count;
