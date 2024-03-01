@@ -18,6 +18,7 @@ COPY . .
 RUN cd /app/frontend \
     && npm install \
     && npm run build
+#######################################################################
 
 # Deploy the application binary into a lean image
 FROM alpine AS build-release
