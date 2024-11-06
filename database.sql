@@ -80,3 +80,5 @@ INSERT INTO deviceevents (name, value, displayName, deviceId, descriptionText, u
 -- select deviceid,displayName, count(*) as event_count from deviceevents group by deviceid;
 
 -- select deviceid,displayName, count(*) as event_count from deviceevents group by deviceid order by event_count;
+
+-- select deviceid,displayName, count(*) as event_count from deviceevents where timestamp BETWEEN '2024-02-26T00:00:00+06:00' and '2024-03-01T23:59:59+06:00' group by deviceid order by event_count;
