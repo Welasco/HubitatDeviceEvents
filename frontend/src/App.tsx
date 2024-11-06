@@ -96,10 +96,12 @@ const App: Component = () => {
     label: (new Date().toLocaleTimeString()),
   });
   const [ldeTT] = createResource(timeValueTo, loadDeviceEvents)
-
+  const [deviceSelected, setDeviceSelected] = createSignal('false')
 
   function loadDevice(device: IDevice) {
     console.log('loadDevice: ', device)
+    setDeviceSelected('true')
+    console.log('deviceSelected: ', deviceSelected())
     setReadDeviceDetail(device)
     loadDeviceEvents()
   }
@@ -190,7 +192,7 @@ const App: Component = () => {
   ];
 
   const columnDefsEvent = [
-    { field: 'TimeStamp' },
+    { field: 'TimeStamp', width: 600 },
     { field: 'name' },
     { field: 'value' },
     { field: 'displayName' },
@@ -259,9 +261,14 @@ const App: Component = () => {
             <button class={(area() == 'device_details' ? 'bg-white inline-block border-l border-t border-r rounded-t py-2 px-4 text-blue-700 font-semibold' : 'bg-white inline-block py-2 px-4 text-blue-500 hover:text-blue-800 font-semibold')} onclick={() => setArea('device_details')}>
               Device Details
             </button>
-            <button class={(area() == 'device_events' ? 'bg-white inline-block border-l border-t border-r rounded-t py-2 px-4 text-blue-700 font-semibold' : 'bg-white inline-block py-2 px-4 text-blue-500 hover:text-blue-800 font-semibold')} onclick={() => setArea('device_events')}>
+            <button class={(area() == 'device_events' ? 'bg-white inline-block border-l border-t border-r rounded-t py-2 px-4 text-blue-700 font-semibold' : 'bg-white inline-block py-2 px-4 text-blue-500 hover:text-blue-800 font-semibold')}
+              onclick={() => setArea('device_events')}
+              disabled={deviceSelected() == 'false'}
+              //onclick={deviceSelected() == 'true' ? () => setArea('device_events') : () => setArea('device_details')}
+              >
               Device Events
             </button>
+
           </nav>
 
           <div id='device_details' class={'w-full md:w-full bg-blue-200 h-[calc(100vh-160px)] text-black ' + (area() == 'device_details' ? '' : 'hidden')}>
@@ -270,6 +277,8 @@ const App: Component = () => {
             <p class='text-lg'>{readDeviceDetail() == Device ? '' : JSON.stringify(deviceDetail(), null, 2)}</p> */}
 
             <div id="myGridDevice" class="content-center ag-theme-alpine " style={{ height: '100.0%' }}>
+              {/* DeviceSelected: {deviceSelected()}
+              Area: {area()} */}
               <AgGridSolid
                 rowData={deviceDetail()}
                 columnDefs={columnDefsDevice}
@@ -416,13 +425,19 @@ const App: Component = () => {
             <p class='text-lg'>Value of string toggleReadDeviceEvents: {toggleReadDeviceEvents().toString()}</p> */}
 
             <div id="myGridEvent" class="content-center ag-theme-alpine " style={{ height: '95.0%' }}>
-              <AgGridSolid
-                rowData={deviceEventsToggle()}
-                columnDefs={columnDefsEvent}
-                defaultColDef={defaultColDef}
-                animateRows={true}
-                autoSizeStrategy={gridOptions.autoSizeStrategy}
-              />
+            {/* DeviceSelected: {deviceSelected()}
+            Area: {area()} */}
+              {(area() == 'device_events') && (
+                <AgGridSolid
+                  rowData={deviceEventsToggle()}
+                  columnDefs={columnDefsEvent}
+                  defaultColDef={defaultColDef}
+                  animateRows={true}
+                  autoSizeStrategy={gridOptions.autoSizeStrategy}
+                />
+              )}
+
+
             </div>
           </div>
         </main>
