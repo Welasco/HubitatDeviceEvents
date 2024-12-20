@@ -16,18 +16,10 @@ import 'ag-grid-community/styles/ag-grid.css';
 import 'ag-grid-community/styles/ag-theme-alpine.css';
 import { GridOptions } from 'ag-grid-community';
 
-const apiURL = 'http://vwsstorage.localdomain:3000/api/v1';
-const apiGetDevices = apiURL + '/device';
-const apiGetDevice = apiURL + '/device/{id}';
-const apiGetDeviceEvents = apiURL + '/device/{id}/event?start={start}&end={end}';
+import { Sidebar, UpperMenu, Devices } from './components'
+import { IDevice } from './types'
 
-interface IDevice {
-  Id: string,
-  name: string,
-  label: string,
-  type: string,
-  room: string
-}
+import { apiURL, apiGetDevices, apiGetDevice, apiGetDeviceEvents } from './constants'
 
 const Device = {
   Id: '',
@@ -50,9 +42,6 @@ async function fetchAPI(apiUri: string) {
 
 const App: Component = () => {
   const [area, setArea] = createSignal('device_details')
-  const [readDevice, setReadDevice] = createSignal<number>(1);
-  const toggleDevice = () => setReadDevice(readDevice() == 1 ? setReadDevice(2) : setReadDevice(1))
-  const [devices] = createResource(readDevice, async () => await fetchAPI(apiGetDevices));
 
   const [readDeviceDetail, setReadDeviceDetail] = createSignal<IDevice>(Device);
   const [deviceDetail] = createResource(readDeviceDetail, async () => await fetchAPI(apiGetDevice.replace('{id}', readDeviceDetail().Id)));
@@ -203,73 +192,35 @@ const App: Component = () => {
     { field: 'data' },
   ];
 
-  const rowData = [
-    { name: 'Michael Phelps', value: 'Swimming' },
-    { name: 'Natalie Coughlin', value: 'Swimming' },
-    { name: 'Aleksey Nemov', value: 'Gymnastics' },
-    { name: 'Alicia Coutts', value: 'Swimming' },
-    { name: 'Missy Franklin', value: 'Swimming' },
-    { name: 'Ryan Lochte', value: 'Swimming' },
-    { name: 'Ian Thorpe', value: 'Swimming' },
-    { name: 'Bob Mill', value: 'Rowing' },
-    { name: 'James Cracknell', value: 'Rowing' },
-    { name: 'Elisabeta Lipa', value: 'Rowing' },
-    { name: 'Cameron van der value', value: 'Swimming' },
-    { name: 'Dara Torres', value: 'Swimming' },
-    { name: 'Eamonn Sullivan', value: 'Swimming' },
-    { name: 'Pieter van den value', value: 'Swimming' },
-    { name: 'Inge de Bruijn', value: 'Swimming' },
-    { name: 'Jenny Thompson', value: 'Swimming' },
-    { name: 'Park Tae-Hwan', value: 'Swimming' },
-    { name: 'Daichi Suzuki', value: 'Swimming' },
-    { name: 'Yang Yang', value: 'Short-Track Speed Skating' },
-    { name: 'Penny Oleksiak', value: 'Swimming' },
-    { name: 'Katie Ledecky', value: 'Swimming' },
-    { name: 'Joseph Schooling', value: 'Swimming' },
-  ];
-
-  toggleDevice()
-
   return (
     <>
       <header class="bg-slate-950 text-white p-3 text-2xl font-bold h-[60px]">HubitatDeviceEvents</header>
       <div class="flex flex-row h-[calc(100vh-100px)] bg-white">
-        <aside class="bg-slate-200 p-2 w-1/4 overflow-auto">
-          <section class="h-[40px] bg-gray-300 px-2 space-x-2 flex flex-row"></section>
-          <div class="bg-slate-600 h-[calc(100vh-160px)] px-2">
-            <p>Select a device:</p>
 
-            <select id="deviceList" size="49" class="px-2 w-full">
-              <For each={devices()}>
-                {(device) => (
-                  <option value={device.id} onClick={() => loadDevice(device)}>{device.label}</option>
-                )}
-              </For>
-            </select>
+        <Sidebar
+          fetchAPI={fetchAPI}
+          loadDevice={loadDevice}
+        />
 
-            <br></br>
-            {/* <button onClick={toggleDevice} class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 border border-blue-700 rounded">Load Devices</button>
-            <button onClick={toggleDeviceEvents} class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 border border-blue-700 rounded">Load Device Events</button> */}
-
-            <br></br>
-            {/* <span>{devices.loading && "Loading..."}</span>
-            <pre>{JSON.stringify(devices(), null, 2)}</pre> */}
-          </div>
-        </aside >
         <main id="main-area" class="h-full w-full overflow-auto flex flex-row flex-wrap p-2">
-          <nav class="flex border-b">
-            <button class={(area() == 'device_details' ? 'bg-white inline-block border-l border-t border-r rounded-t py-2 px-4 text-blue-700 font-semibold' : 'bg-white inline-block py-2 px-4 text-blue-500 hover:text-blue-800 font-semibold')} onclick={() => setArea('device_details')}>
-              Device Details
-            </button>
-            <button class={(area() == 'device_events' ? 'bg-white inline-block border-l border-t border-r rounded-t py-2 px-4 text-blue-700 font-semibold' : 'bg-white inline-block py-2 px-4 text-blue-500 hover:text-blue-800 font-semibold')}
-              onclick={() => setArea('device_events')}
-              disabled={deviceSelected() == 'false'}
-              //onclick={deviceSelected() == 'true' ? () => setArea('device_events') : () => setArea('device_details')}
-              >
-              Device Events
-            </button>
 
-          </nav>
+          <UpperMenu
+            deviceSelected={deviceSelected}
+            area={area}
+            setArea={setArea}
+          />
+
+          <Devices
+            fetchAPI={fetchAPI}
+            loadDevice={loadDevice}
+            area={area}
+            deviceDetail={deviceDetail}
+            //deviceEventsToggle={deviceEventsToggle}
+            loadDeviceEvents={loadDeviceEvents}
+            toggleDeviceEvents={toggleDeviceEvents}
+            toggleReadDeviceEvents={toggleReadDeviceEvents}
+            readDeviceDetail={readDeviceDetail}
+          />
 
           <div id='device_details' class={'w-full md:w-full bg-blue-200 h-[calc(100vh-160px)] text-black ' + (area() == 'device_details' ? '' : 'hidden')}>
             {/* <p class='text-lg'>Device Details</p>
