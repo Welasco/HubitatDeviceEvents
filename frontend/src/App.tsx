@@ -16,7 +16,9 @@ import 'ag-grid-community/styles/ag-grid.css';
 import 'ag-grid-community/styles/ag-theme-alpine.css';
 import { GridOptions } from 'ag-grid-community';
 
-const apiURL = 'http://vwsstorage.localdomain:3000/api/v1';
+// const apiURL = 'http://vwsstorage.localdomain:3000/api/v1';
+// @ts-ignore
+const apiURL = window.base_url;
 const apiGetDevices = apiURL + '/device';
 const apiGetDevice = apiURL + '/device/{id}';
 const apiGetDeviceEvents = apiURL + '/device/{id}/event?start={start}&end={end}';

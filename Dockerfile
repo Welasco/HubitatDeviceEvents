@@ -26,10 +26,14 @@ FROM alpine AS build-release
 WORKDIR /app
 
 COPY --from=build-go /hubitatedeviceevents /app/hubitatedeviceevents
+COPY --from=build-go /app/docker/startup /opt/startup
 COPY --from=build-frontend /app/frontend/dist /app/public
+
+RUN chmod 755 /opt/startup/init_container.sh
 
 EXPOSE 3000
 
 #USER nonroot:nonroot
 
-ENTRYPOINT ["/app/hubitatedeviceevents"]
+#ENTRYPOINT ["/app/hubitatedeviceevents"]
+ENTRYPOINT ["/opt/startup/init_container.sh"]
