@@ -10,7 +10,8 @@ import (
 )
 
 func init() {
-	logger.Init(os.Getenv("logPath"), os.Getenv("logLevel"))
+	file := os.Getenv("logPath") + os.Getenv("HOSTNAME") + ".log"
+	logger.Init(file, os.Getenv("logLevel"))
 }
 
 func main() {
