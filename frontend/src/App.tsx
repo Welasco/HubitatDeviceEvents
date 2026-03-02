@@ -1,5 +1,4 @@
 import type { Component } from 'solid-js';
-import { onMount } from 'solid-js';
 import { createSignal, createResource, For } from 'solid-js';
 import TimePicker from "@rnwonder/solid-date-picker/timePicker";
 import DatePicker, {
@@ -194,7 +193,7 @@ const App: Component = () => {
   ];
 
   const columnDefsEvent = [
-    { field: 'TimeStamp', width: 600 },
+    { field: 'TimeStamp' },
     { field: 'name' },
     { field: 'value' },
     { field: 'displayName' },
@@ -205,247 +204,206 @@ const App: Component = () => {
     { field: 'data' },
   ];
 
-  const rowData = [
-    { name: 'Michael Phelps', value: 'Swimming' },
-    { name: 'Natalie Coughlin', value: 'Swimming' },
-    { name: 'Aleksey Nemov', value: 'Gymnastics' },
-    { name: 'Alicia Coutts', value: 'Swimming' },
-    { name: 'Missy Franklin', value: 'Swimming' },
-    { name: 'Ryan Lochte', value: 'Swimming' },
-    { name: 'Ian Thorpe', value: 'Swimming' },
-    { name: 'Bob Mill', value: 'Rowing' },
-    { name: 'James Cracknell', value: 'Rowing' },
-    { name: 'Elisabeta Lipa', value: 'Rowing' },
-    { name: 'Cameron van der value', value: 'Swimming' },
-    { name: 'Dara Torres', value: 'Swimming' },
-    { name: 'Eamonn Sullivan', value: 'Swimming' },
-    { name: 'Pieter van den value', value: 'Swimming' },
-    { name: 'Inge de Bruijn', value: 'Swimming' },
-    { name: 'Jenny Thompson', value: 'Swimming' },
-    { name: 'Park Tae-Hwan', value: 'Swimming' },
-    { name: 'Daichi Suzuki', value: 'Swimming' },
-    { name: 'Yang Yang', value: 'Short-Track Speed Skating' },
-    { name: 'Penny Oleksiak', value: 'Swimming' },
-    { name: 'Katie Ledecky', value: 'Swimming' },
-    { name: 'Joseph Schooling', value: 'Swimming' },
-  ];
-
   toggleDevice()
 
   return (
-    <>
-      <header class="bg-slate-950 text-white p-3 text-2xl font-bold h-[60px]">HubitatDeviceEvents</header>
-      <div class="flex flex-row h-[calc(100vh-100px)] bg-white">
-        <aside class="bg-slate-200 p-2 w-1/4 overflow-auto">
-          <section class="h-[40px] bg-gray-300 px-2 space-x-2 flex flex-row"></section>
-          <div class="bg-slate-600 h-[calc(100vh-160px)] px-2">
-            <p>Select a device:</p>
+    <div class="flex flex-col h-screen bg-slate-50">
+      {/* ── Header ─────────────────────────────────────── */}
+      <header class="bg-slate-900 text-white flex items-center px-5 h-14 shrink-0 shadow-lg">
+        <svg class="w-6 h-6 text-indigo-400 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+        </svg>
+        <h1 class="text-lg font-semibold tracking-wide">Hubitat Device Events</h1>
+      </header>
 
-            <select id="deviceList" size="49" class="px-2 w-full">
-              <For each={devices()}>
-                {(device) => (
-                  <option value={device.id} onClick={() => loadDevice(device)}>{device.label}</option>
-                )}
-              </For>
-            </select>
-
-            <br></br>
-            {/* <button onClick={toggleDevice} class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 border border-blue-700 rounded">Load Devices</button>
-            <button onClick={toggleDeviceEvents} class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 border border-blue-700 rounded">Load Device Events</button> */}
-
-            <br></br>
-            {/* <span>{devices.loading && "Loading..."}</span>
-            <pre>{JSON.stringify(devices(), null, 2)}</pre> */}
+      <div class="flex flex-1 overflow-hidden">
+        {/* ── Sidebar ────────────────────────────────────── */}
+        <aside class="w-72 bg-slate-900 flex flex-col shrink-0 border-r border-slate-800">
+          <div class="px-4 py-3 border-b border-slate-800">
+            <p class="text-xs font-semibold uppercase tracking-wider text-slate-400">Devices</p>
           </div>
-        </aside >
-        <main id="main-area" class="h-full w-full overflow-auto flex flex-row flex-wrap p-2">
-          <nav class="flex border-b">
-            <button class={(area() == 'device_details' ? 'bg-white inline-block border-l border-t border-r rounded-t py-2 px-4 text-blue-700 font-semibold' : 'bg-white inline-block py-2 px-4 text-blue-500 hover:text-blue-800 font-semibold')} onclick={() => setArea('device_details')}>
+          <div class="flex-1 overflow-y-auto px-2 py-2 space-y-0.5">
+            {devices.loading && (
+              <p class="text-sm text-slate-500 px-3 py-4 text-center">Loading devices…</p>
+            )}
+            <For each={devices()}>
+              {(device) => (
+                <div
+                  class={'device-item' + (readDeviceDetail().Id === device.Id ? ' active' : '')}
+                  onClick={() => loadDevice(device)}
+                >
+                  {device.label}
+                </div>
+              )}
+            </For>
+          </div>
+        </aside>
+
+        {/* ── Main content ───────────────────────────────── */}
+        <main class="flex-1 flex flex-col overflow-hidden">
+          {/* Tabs */}
+          <nav class="flex border-b border-slate-200 bg-white px-4 shrink-0">
+            <button
+              class={'tab-btn' + (area() == 'device_details' ? ' tab-active' : '')}
+              onclick={() => setArea('device_details')}
+            >
               Device Details
             </button>
-            <button class={(area() == 'device_events' ? 'bg-white inline-block border-l border-t border-r rounded-t py-2 px-4 text-blue-700 font-semibold' : 'bg-white inline-block py-2 px-4 text-blue-500 hover:text-blue-800 font-semibold')}
+            <button
+              class={'tab-btn' + (area() == 'device_events' ? ' tab-active' : '')}
               onclick={() => setArea('device_events')}
               disabled={deviceSelected() == 'false'}
-              //onclick={deviceSelected() == 'true' ? () => setArea('device_events') : () => setArea('device_details')}
-              >
+            >
               Device Events
             </button>
-
           </nav>
 
-          <div id='device_details' class={'w-full md:w-full bg-blue-200 h-[calc(100vh-160px)] text-black ' + (area() == 'device_details' ? '' : 'hidden')}>
-            {/* <p class='text-lg'>Device Details</p>
-            <p class='text-lg'>Test readDeviceDetail() trigger: {readDeviceDetail().Id}</p>
-            <p class='text-lg'>{readDeviceDetail() == Device ? '' : JSON.stringify(deviceDetail(), null, 2)}</p> */}
-
-            <div id="myGridDevice" class="content-center ag-theme-alpine " style={{ height: '100.0%' }}>
-              {/* DeviceSelected: {deviceSelected()}
-              Area: {area()} */}
-              <AgGridSolid
-                rowData={deviceDetail()}
-                columnDefs={columnDefsDevice}
-                defaultColDef={defaultColDef}
-                animateRows={true}
-                autoSizeStrategy={gridOptions.autoSizeStrategy}
-                rowSelection='single'
-              />
-            </div>
-
-          </div>
-          <div id='device_events' class={'w-full md:w-full  bg-blue-200 h-[calc(100vh-160px)] text-black ' + (area() == 'device_events' ? '' : 'hidden')}>
-
-            {/* ######################################################################################## */}
-            {/* ############################### Calendar Component ##################################### */}
-            <div id="date-time-menu" class='bg-red-500 h-[60px] flex flex-row flex-wrap p-3 space-x-2'>
-              <div id="date-time-from" class="text-white flex flex-row flex-wrap p-3 space-x-2">
-                <p class={'text-lg '}>From:</p>
-                <div>
-                  <DatePicker
-                    removeNavButtons
-                    weekDaysType="single"
-                    shouldHighlightWeekends
-                    hideOutSideDays
-                    afterNextButtonAreaJSX={({ handleNextMonth, handlePrevMonth }) => (
-                      <div class="">
-                        <button onClick={handlePrevMonth}>
-                          <PrevIcon />
-                        </button>
-                        <button onClick={handleNextMonth}>
-                          <NextIcon />
-                        </button>
-                      </div>
-                    )}
-                    renderInput={({ showDate, value }) => (
-                      <div class="custom-input">
-                        {/* <input value={value().label} readOnly /> */}
-                        <input value={singleDateFrom().label} readOnly />
-                        <button onClick={showDate}>
-                          <CalendarIcon />
-                        </button>
-                      </div>
-                    )}
-                    onChange={() => { toggleDeviceEvents }}
-                    value={singleDateFrom}
-                    setValue={setSingleDateFrom}
-                    type={'single'}
-                    monthSelectorFormat={'long'}
-                  />
-                </div>
-                <div>
-                  <TimePicker
-                    value={timeValueFrom}
-                    setValue={setTimeValueFrom}
-                    shouldCloseOnSelect
-                    allowedView={['hour', 'minute', 'second']}
-                    renderInput={({ showTime, value }) => (
-                      <div class="custom-input">
-                        <input value={timeValueFrom().label} readOnly />
-                        <button onClick={showTime}>
-                          <CalendarIcon />
-                        </button>
-                      </div>
-                    )}
-                    timeAnalogClockCenterDotClass='text-red-500'
-                    timeAnalogNumberClass='text-black'
-                    timeAnalogClockHandClass='text-black'
-                    timeAnalogWrapperClass='text-black'
-                    timePickerBottomAreaClass='text-black'
-                    timePickerMeridiemBtnClass='text-black'
-                    timePickerTopAreaClass='text-black'
-                    timePickerWrapperClass='text-black'
-                  />
+          {/* ── Device Details tab ─────────────────────── */}
+          <div class={'flex-1 overflow-hidden ' + (area() == 'device_details' ? '' : 'hidden')}>
+            {deviceSelected() == 'false' ? (
+              <div class="flex items-center justify-center h-full text-slate-400">
+                <div class="text-center">
+                  <svg class="w-16 h-16 mx-auto mb-4 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" />
+                  </svg>
+                  <p class="text-lg font-medium">Select a device</p>
+                  <p class="text-sm mt-1">Choose a device from the sidebar to view its details</p>
                 </div>
               </div>
-              <div id="date-time-to" class="text-white flex flex-row flex-wrap p-3 space-x-2">
-                <p class={'text-lg '}>To:</p>
-                <div>
-                  <DatePicker
-                    removeNavButtons
-                    weekDaysType="single"
-                    shouldHighlightWeekends
-                    hideOutSideDays
-                    afterNextButtonAreaJSX={({ handleNextMonth, handlePrevMonth }) => (
-                      <div class="">
-                        <button onClick={handlePrevMonth}>
-                          <PrevIcon />
-                        </button>
-                        <button onClick={handleNextMonth}>
-                          <NextIcon />
-                        </button>
-                      </div>
-                    )}
-                    renderInput={({ showDate, value }) => (
-                      <div class="custom-input">
-                        <input value={singleDateTo().label} readOnly />
-                        <button onClick={showDate}>
-                          <CalendarIcon />
-                        </button>
-                      </div>
-                    )}
-                    onChange={() => { toggleDeviceEvents }}
-                    value={singleDateTo}
-                    setValue={setSingleDateTo}
-                    type={'single'}
-                    monthSelectorFormat={'long'}
-                  />
-                </div>
-
-                <div>
-                  <TimePicker
-                    value={timeValueTo}
-                    setValue={setTimeValueTo}
-                    shouldCloseOnSelect
-                    allowedView={['hour', 'minute', 'second']}
-                    renderInput={({ showTime, value }) => (
-                      <div class="custom-input">
-                        <input value={timeValueTo().label} readOnly />
-                        <button onClick={showTime}>
-                          <CalendarIcon />
-                        </button>
-                      </div>
-                    )}
-                    onChange={() => { toggleDeviceEvents }}
-                    timeAnalogClockCenterDotClass='text-red-500'
-                    timeAnalogNumberClass='text-black'
-                    timeAnalogClockHandClass='text-black'
-                    timeAnalogWrapperClass='text-black'
-                    timePickerBottomAreaClass='text-black'
-                    timePickerMeridiemBtnClass='text-black'
-                    timePickerTopAreaClass='text-black'
-                    timePickerWrapperClass='text-black'
-                  />
-                </div>
-              </div>
-            </div>
-            {/* ######################################################################################## */}
-            {/* <p class={'text-lg '}>Device Events:</p> */}
-            {/* <p class='text-lg'>{readDeviceDetail() == Device ? '' : JSON.stringify(deviceEvents(), null, 2)}</p> */}
-            {/* <p class='text-lg'>JSON Events: {JSON.stringify(deviceEventsToggle(), null, 2)}</p> */}
-            {/* <p class='text-lg'>Events: {JSON.stringify(deviceEventsToggle(), null, 2)}</p> */}
-            {/* <p class='text-lg'>{readTest()}</p> */}
-            {/* <p class='text-lg'>Value of toggleReadDeviceEvents: {toggleReadDeviceEvents()}</p>
-            <p class='text-lg'>Value of string toggleReadDeviceEvents: {toggleReadDeviceEvents().toString()}</p> */}
-
-            <div id="myGridEvent" class="content-center ag-theme-alpine " style={{ height: '95.0%' }}>
-            {/* DeviceSelected: {deviceSelected()}
-            Area: {area()} */}
-              {(area() == 'device_events') && (
+            ) : (
+              <div class="ag-theme-alpine h-full w-full">
                 <AgGridSolid
-                  rowData={deviceEventsToggle()}
-                  columnDefs={columnDefsEvent}
+                  rowData={deviceDetail()}
+                  columnDefs={columnDefsDevice}
                   defaultColDef={defaultColDef}
                   animateRows={true}
                   autoSizeStrategy={gridOptions.autoSizeStrategy}
+                  rowSelection='single'
                 />
-              )}
+              </div>
+            )}
+          </div>
 
+          {/* ── Device Events tab ──────────────────────── */}
+          <div class={'flex-1 flex flex-col overflow-hidden ' + (area() == 'device_events' ? '' : 'hidden')}>
+            {/* Date/time toolbar */}
+            <div class="bg-white border-b border-slate-200 px-5 py-3 flex flex-wrap items-center gap-6 shrink-0">
+              <div class="flex items-center gap-2">
+                <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">From</span>
+                <DatePicker
+                  removeNavButtons
+                  weekDaysType="single"
+                  shouldHighlightWeekends
+                  hideOutSideDays
+                  afterNextButtonAreaJSX={({ handleNextMonth, handlePrevMonth }) => (
+                    <div class="flex gap-1">
+                      <button onClick={handlePrevMonth}><PrevIcon /></button>
+                      <button onClick={handleNextMonth}><NextIcon /></button>
+                    </div>
+                  )}
+                  renderInput={({ showDate }) => (
+                    <div class="custom-input">
+                      <input value={singleDateFrom().label} readOnly />
+                      <button onClick={showDate}><CalendarIcon /></button>
+                    </div>
+                  )}
+                  onChange={() => { toggleDeviceEvents }}
+                  value={singleDateFrom}
+                  setValue={setSingleDateFrom}
+                  type={'single'}
+                  monthSelectorFormat={'long'}
+                />
+                <TimePicker
+                  value={timeValueFrom}
+                  setValue={setTimeValueFrom}
+                  shouldCloseOnSelect
+                  allowedView={['hour', 'minute', 'second']}
+                  renderInput={({ showTime }) => (
+                    <div class="custom-input">
+                      <input value={timeValueFrom().label} readOnly />
+                      <button onClick={showTime}><CalendarIcon /></button>
+                    </div>
+                  )}
+                  timeAnalogClockCenterDotClass='text-indigo-500'
+                  timeAnalogNumberClass='text-slate-700'
+                  timeAnalogClockHandClass='text-indigo-500'
+                  timeAnalogWrapperClass='text-slate-700'
+                  timePickerBottomAreaClass='text-slate-700'
+                  timePickerMeridiemBtnClass='text-slate-700'
+                  timePickerTopAreaClass='text-slate-700'
+                  timePickerWrapperClass='text-slate-700'
+                />
+              </div>
 
+              <div class="w-px h-6 bg-slate-300"></div>
+
+              <div class="flex items-center gap-2">
+                <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">To</span>
+                <DatePicker
+                  removeNavButtons
+                  weekDaysType="single"
+                  shouldHighlightWeekends
+                  hideOutSideDays
+                  afterNextButtonAreaJSX={({ handleNextMonth, handlePrevMonth }) => (
+                    <div class="flex gap-1">
+                      <button onClick={handlePrevMonth}><PrevIcon /></button>
+                      <button onClick={handleNextMonth}><NextIcon /></button>
+                    </div>
+                  )}
+                  renderInput={({ showDate }) => (
+                    <div class="custom-input">
+                      <input value={singleDateTo().label} readOnly />
+                      <button onClick={showDate}><CalendarIcon /></button>
+                    </div>
+                  )}
+                  onChange={() => { toggleDeviceEvents }}
+                  value={singleDateTo}
+                  setValue={setSingleDateTo}
+                  type={'single'}
+                  monthSelectorFormat={'long'}
+                />
+                <TimePicker
+                  value={timeValueTo}
+                  setValue={setTimeValueTo}
+                  shouldCloseOnSelect
+                  allowedView={['hour', 'minute', 'second']}
+                  renderInput={({ showTime }) => (
+                    <div class="custom-input">
+                      <input value={timeValueTo().label} readOnly />
+                      <button onClick={showTime}><CalendarIcon /></button>
+                    </div>
+                  )}
+                  onChange={() => { toggleDeviceEvents }}
+                  timeAnalogClockCenterDotClass='text-indigo-500'
+                  timeAnalogNumberClass='text-slate-700'
+                  timeAnalogClockHandClass='text-indigo-500'
+                  timeAnalogWrapperClass='text-slate-700'
+                  timePickerBottomAreaClass='text-slate-700'
+                  timePickerMeridiemBtnClass='text-slate-700'
+                  timePickerTopAreaClass='text-slate-700'
+                  timePickerWrapperClass='text-slate-700'
+                />
+              </div>
+            </div>
+
+            {/* Events grid */}
+            <div class="flex-1 overflow-hidden">
+              <div class="ag-theme-alpine h-full w-full">
+                {(area() == 'device_events') && (
+                  <AgGridSolid
+                    rowData={deviceEventsToggle()}
+                    columnDefs={columnDefsEvent}
+                    defaultColDef={defaultColDef}
+                    animateRows={true}
+                    autoSizeStrategy={gridOptions.autoSizeStrategy}
+                  />
+                )}
+              </div>
             </div>
           </div>
         </main>
-      </div >
-      <footer class="h-[40px] text-white bg-black text-2xl px-2">footer</footer>
-    </>
+      </div>
+    </div>
   );
 };
 

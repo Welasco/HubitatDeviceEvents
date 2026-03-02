@@ -1,3 +1,68 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* ── Scrollbar ─────────────────────────────────────── */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.4);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 0.7);
+}
+
+/* ── Device list items ─────────────────────────────── */
+.device-item {
+  @apply px-3 py-2 text-sm text-slate-300 rounded-md cursor-pointer
+         transition-colors duration-150 truncate;
+}
+.device-item:hover {
+  @apply bg-slate-700/60 text-white;
+}
+.device-item.active {
+  @apply bg-indigo-600 text-white font-medium;
+}
+
+/* ── Date/time picker inputs ───────────────────────── */
+.custom-input {
+  @apply flex items-center gap-1;
+}
+.custom-input input {
+  @apply bg-white border border-slate-300 rounded-md px-2.5 py-1 text-sm text-slate-700
+         w-[140px] focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent
+         cursor-pointer;
+}
+.custom-input button {
+  @apply p-1 rounded hover:bg-slate-200 text-slate-500 transition-colors duration-150;
+}
+
+/* ── Tab styling ───────────────────────────────────── */
+.tab-btn {
+  @apply px-5 py-2.5 text-sm font-medium transition-colors duration-150
+         border-b-2 border-transparent text-slate-500;
+}
+.tab-btn:hover:not(.tab-active):not(:disabled) {
+  @apply text-slate-700 border-slate-300;
+}
+.tab-btn.tab-active {
+  @apply text-indigo-600 border-indigo-600;
+}
+.tab-btn:disabled {
+  @apply text-slate-300 cursor-not-allowed;
+}
+
+/* ── AG Grid overrides for a cleaner look ──────────── */
+.ag-theme-alpine {
+  --ag-header-background-color: #f8fafc;
+  --ag-header-foreground-color: #334155;
+  --ag-row-hover-color: #f1f5f9;
+  --ag-selected-row-background-color: #e0e7ff;
+  --ag-border-color: #e2e8f0;
+  --ag-font-size: 13px;
+}
