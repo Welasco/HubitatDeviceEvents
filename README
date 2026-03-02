@@ -37,3 +37,77 @@ $dList | %{
 #$tempArr | ft
 
 $tempArr | sort LastUpdatedTime | ft
+
+
+
+
+  CommandLine
+  -----------
+   Invoke-RestMethod http://hubitat.localdomain/device/fullJson/52
+   $d = Invoke-RestMethod http://hubitat.localdomain/device/fullJson/52
+   $d
+   $d.device
+   $d.device.data
+   $dList = Invoke-RestMethod http://hubitat.localdomain/hub2/devicesList
+   $dList
+   $dList.devices
+   $dList.devices.data
+  $dList.devices.data | ft Name,Type
+  $dList.devices.data | where{$_.Type -like "*zoo*"} | ft Name,Type
+  $dList.devices.data | where{$_.Type -like "*zen76*"} | ft Name,Type
+  $dList.devices.data | where{$_.Type -like "*zen76*"} | ft id,Name,Type
+  $dzooz = $dList.devices.data | where{$_.Type -like "*zen76*"}
+  $dZoozDetails = $dzooz | %{Invoke-RestMethod "http://hubitat.localdomain/device/fullJson/$($_.id)"}
+  $dZoozDetails
+  $dZoozDetails.device
+  $dZoozDetails.device.data
+  $dZoozDetails.device | ft id, DisplayName
+  $dZoozDetails.device | ft id, DisplayName, Data
+  $dZoozDetails.device | ft id, DisplayName, Data.hardwareVersion
+  $dZoozDetails.device | ft -Property id, DisplayName, Data.hardwareVersion
+  $dZoozDetails.device | ft -Property id, DisplayName, @{$Data.hardwareVersion}
+  $dZoozDetails.device | ft -Property id, DisplayName, @{Name='hardwareVersion; Expression={'$Data.hardwareVersion}}
+  $dZoozDetails.device | ft -Property id, DisplayName, @{Name='hardwareVersion'; Expression={$Data.hardwareVersion}}
+  $dZoozDetails.device | ft -Property id, DisplayName, @{Name='hardwareVersion'; Expression={$data.hardwareVersion}}
+  $dZoozDetails.device | ft -Property id, DisplayName, @{Name='hardwareVersion'; Expression={data.hardwareVersion}}
+  $dZoozDetails.device | ft -Property id, DisplayName, @{Name='hardwareVersion'; Expression={$_.data.hardwareVersion}}
+  $dZoozDetails.device | ft -Property id, deviceTypeName, DisplayName, @{Name='hardwareVersion'; Expression={$_.data.hardwareVersion}}, @{Name='protocolVersion'; Expression={$_.data.protocolVersion}}, @{Name='firmwareVersion'; Expression={$_.data.firmwareVersion}}, @{Name='S2'; Expression={$_.data.S2}}
+
+
+ id deviceTypeName       displayName           hardwareVersion protocolVersion firmwareVersion S2
+ -- --------------       -----------           --------------- --------------- --------------- --
+615 Zooz Zen76 S2 Switch Hall                  1               7.13            10.0            3
+644 Zooz Zen76 S2 Switch Media Room Ceiling    1               7.13            10.0            3
+612 Zooz Zen76 S2 Switch Sofia Mirror          1               7.13            10.0            3
+614 Zooz Zen76 S2 Switch Dinner Room           1               7.13            2.0             3
+616 Zooz Zen76 S2 Switch Garage outside        1               7.13            2.0             3
+645 Zooz Zen76 S2 Switch Media Room            1               7.13            2.0             3
+613 Zooz Zen76 S2 Switch Sofia Closet          1               7.13            2.0             3
+767 Zooz Zen76 S2 Switch Entrance              3               7.19            3.10            3
+766 Zooz Zen76 S2 Switch Front House           3               7.19            3.10            3
+761 Zooz Zen76 S2 Switch Kitchen door          3               7.19            3.10            3
+762 Zooz Zen76 S2 Switch Master Closet         3               7.19            3.10            3
+763 Zooz Zen76 S2 Switch Master Exhaust        3               7.19            3.10            3
+764 Zooz Zen76 S2 Switch Upstairs bath exhaust 3               7.19            3.10            3
+765 Zooz Zen76 S2 Switch Upstairs Bath Shower  3               7.19            3.10            3
+ 43 Zooz Zen76 S2 Switch Upstairs Bath Mirror  3               7.19            3.30
+ 55 Zooz Zen76 S2 Switch Guest Closet          3               7.19            3.30
+ 42 Zooz Zen76 S2 Switch Ethan Closet          3               7.19            3.30
+ 40 Zooz Zen76 S2 Switch Gateway Rooms         3               7.19            3.50
+ 52 Zooz Zen76 S2 Switch Laundry               3               7.19            3.50
+ 56 Zooz Zen76 S2 Switch Living Room           3               7.19            3.50
+ 65 Zooz Zen76 S2 Switch Flower Bed            3               7.19            3.50
+
+
+function Get-ZoozZen76Details {
+  param (
+    [string]$hubitatBaseUrl = "http://hubitat.localdomain"
+  )
+
+  $dList = Invoke-RestMethod "$hubitatBaseUrl/hub2/devicesList"
+  $dzooz = $dList.devices.data | where{$_.Type -like "*zen76*"}
+  $dZoozDetails = $dzooz | %{Invoke-RestMethod "$hubitatBaseUrl/device/fullJson/$($_.id)"}
+
+  $dZoozDetails.device | ft -Property id, deviceTypeName, DisplayName, @{Name='hardwareVersion'; Expression={$_.data.hardwareVersion}}, @{Name='protocolVersion'; Expression={$_.data.protocolVersion}}, @{Name='firmwareVersion'; Expression={$_.data.firmwareVersion}}, @{Name='S2'; Expression={$_.data.S2}}
+}
+Get-ZoozZen76Details
