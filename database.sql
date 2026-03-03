@@ -57,6 +57,10 @@ INSERT INTO deviceevents (name, value, displayName, deviceId, descriptionText, u
 
 -- Quary Samples:
 
+-- mariadb -u root -p
+
+-- show databases; use hubitatdeviceevents;
+
 -- select * from deviceevents limit 1;
 
 -- select * from deviceevents where deviceid=12;
