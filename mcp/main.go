@@ -27,7 +27,7 @@ func main() {
 		serverVersion,
 		server.WithToolCapabilities(true),
 		server.WithInstructions(
-			"Tools to read and manage smart-home devices and their events from a "+
+			"Read-only tools to inspect smart-home devices and their events from a "+
 				"HubitatDeviceEvents server. Device IDs are numeric strings. Event "+
 				"time filters use ISO-8601 timestamps (e.g. 2024-01-01T00:00:00+00:00).",
 		),
@@ -69,59 +69,6 @@ func registerTools(s *server.MCPServer, client *HubitatClient) {
 		return mcp.NewToolResultText(body), nil
 	})
 
-	s.AddTool(mcp.NewTool("add_device",
-		mcp.WithDescription("Register a new device. Provide the numeric ID plus metadata."),
-		mcp.WithString("id", mcp.Required(), mcp.Description("The numeric device ID.")),
-		mcp.WithString("name", mcp.Required(), mcp.Description("Device name (driver/type name).")),
-		mcp.WithString("label", mcp.Required(), mcp.Description("Human-friendly device label.")),
-		mcp.WithString("type", mcp.Required(), mcp.Description("Device type.")),
-		mcp.WithString("room", mcp.Description("Room the device belongs to (optional).")),
-	), func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-		d, err := deviceFromRequest(req)
-		if err != nil {
-			return mcp.NewToolResultError(err.Error()), nil
-		}
-		body, err := client.AddDevice(d)
-		if err != nil {
-			return mcp.NewToolResultError(err.Error()), nil
-		}
-		return mcp.NewToolResultText(body), nil
-	})
-
-	s.AddTool(mcp.NewTool("update_device",
-		mcp.WithDescription("Update an existing device's metadata. The device is matched by its ID."),
-		mcp.WithString("id", mcp.Required(), mcp.Description("The numeric device ID.")),
-		mcp.WithString("name", mcp.Required(), mcp.Description("Device name (driver/type name).")),
-		mcp.WithString("label", mcp.Required(), mcp.Description("Human-friendly device label.")),
-		mcp.WithString("type", mcp.Required(), mcp.Description("Device type.")),
-		mcp.WithString("room", mcp.Description("Room the device belongs to (optional).")),
-	), func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-		d, err := deviceFromRequest(req)
-		if err != nil {
-			return mcp.NewToolResultError(err.Error()), nil
-		}
-		body, err := client.UpdateDevice(d)
-		if err != nil {
-			return mcp.NewToolResultError(err.Error()), nil
-		}
-		return mcp.NewToolResultText(body), nil
-	})
-
-	s.AddTool(mcp.NewTool("delete_device",
-		mcp.WithDescription("Delete a device by ID. Fails if the device still has associated events."),
-		mcp.WithString("id", mcp.Required(), mcp.Description("The numeric device ID.")),
-	), func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-		id, err := req.RequireString("id")
-		if err != nil {
-			return mcp.NewToolResultError(err.Error()), nil
-		}
-		body, err := client.DeleteDevice(id)
-		if err != nil {
-			return mcp.NewToolResultError(err.Error()), nil
-		}
-		return mcp.NewToolResultText(body), nil
-	})
-
 	s.AddTool(mcp.NewTool("list_device_events",
 		mcp.WithDescription("List all recorded device events across every device."),
 		mcp.WithReadOnlyHintAnnotation(true),
@@ -155,30 +102,4 @@ func registerTools(s *server.MCPServer, client *HubitatClient) {
 		}
 		return mcp.NewToolResultText(body), nil
 	})
-}
-
-func deviceFromRequest(req mcp.CallToolRequest) (Device, error) {
-	id, err := req.RequireString("id")
-	if err != nil {
-		return Device{}, err
-	}
-	name, err := req.RequireString("name")
-	if err != nil {
-		return Device{}, err
-	}
-	label, err := req.RequireString("label")
-	if err != nil {
-		return Device{}, err
-	}
-	typ, err := req.RequireString("type")
-	if err != nil {
-		return Device{}, err
-	}
-	return Device{
-		Id:    id,
-		Name:  name,
-		Label: label,
-		Type:  typ,
-		Room:  req.GetString("room", ""),
-	}, nil
 }

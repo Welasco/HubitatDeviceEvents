@@ -1,11 +1,13 @@
 # HubitatDeviceEvents MCP Server
 
 A [Model Context Protocol](https://modelcontextprotocol.io) (MCP) server that lets
-an AI client read and manage smart-home devices and their events from a running
+an AI client **read** smart-home devices and their events from a running
 [HubitatDeviceEvents](../README) instance.
 
-It is a **decoupled client**: it talks to the existing `/api/v1/` REST API over
-HTTP, so the main Go app and this MCP server run as independent processes.
+It is **read-only** and a **decoupled client**: it only issues `GET` requests
+against the existing `/api/v1/` REST API over HTTP, so the main Go app and this
+MCP server run as independent processes. Devices are added automatically by the
+main application when the hub reports new events, so no write tools are exposed.
 
 ## Tools
 
@@ -13,9 +15,6 @@ HTTP, so the main Go app and this MCP server run as independent processes.
 |---|---|---|
 | `list_devices` | List all registered devices | `GET /api/v1/device` |
 | `get_device` | Get one device by ID | `GET /api/v1/device/{id}` |
-| `add_device` | Register a new device | `POST /api/v1/device` |
-| `update_device` | Update a device's metadata | `PUT /api/v1/device` |
-| `delete_device` | Delete a device by ID | `DELETE /api/v1/device/{id}` |
 | `list_device_events` | List all events across all devices | `GET /api/v1/device/event` |
 | `get_device_events` | Events for one device, optional `start`/`end` ISO range | `GET /api/v1/device/{id}/event` |
 
@@ -73,8 +72,8 @@ Make sure your HubitatDeviceEvents server is running and reachable (default
 ```
 
 Use the absolute path to the binary. On Linux/macOS drop the `.exe` and use a
-POSIX path. After saving the config, restart the client; the seven tools above
-should appear.
+POSIX path. After saving the config, restart the client; the four read-only
+tools above should appear.
 
 ## Quick manual test (stdio)
 

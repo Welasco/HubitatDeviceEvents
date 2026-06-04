@@ -1,8 +1,6 @@
 package main
 
 import (
-	"bytes"
-	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -11,17 +9,7 @@ import (
 	"time"
 )
 
-// Device mirrors model.Device from the main application.
-// Note: the JSON tag for the identifier is uppercase "Id" to match the Hubitat API.
-type Device struct {
-	Id    string `json:"Id"`
-	Name  string `json:"name"`
-	Label string `json:"label"`
-	Type  string `json:"type"`
-	Room  string `json:"room"`
-}
-
-// HubitatClient is a thin HTTP client for the HubitatDeviceEvents REST API.
+// HubitatClient is a thin, read-only HTTP client for the HubitatDeviceEvents REST API.
 type HubitatClient struct {
 	baseURL string
 	http    *http.Client
@@ -34,24 +22,14 @@ func NewHubitatClient(baseURL string) *HubitatClient {
 	}
 }
 
-// do performs an HTTP request and returns the raw response body. A non-2xx
-// status code is returned as an error that includes the status and body so the
-// AI client can surface a useful message.
-func (c *HubitatClient) do(method, path string, body any) (string, error) {
-	var reqBody io.Reader
-	if body != nil {
-		b, err := json.Marshal(body)
-		if err != nil {
-			return "", fmt.Errorf("encoding request body: %w", err)
-		}
-		reqBody = bytes.NewReader(b)
-	}
-
-	req, err := http.NewRequest(method, c.baseURL+path, reqBody)
+// get performs an HTTP GET and returns the raw response body. A non-2xx status
+// code is returned as an error that includes the status and body so the AI
+// client can surface a useful message.
+func (c *HubitatClient) get(path string) (string, error) {
+	req, err := http.NewRequest(http.MethodGet, c.baseURL+path, nil)
 	if err != nil {
 		return "", fmt.Errorf("building request: %w", err)
 	}
-	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Accept", "application/json")
 
 	resp, err := c.http.Do(req)
@@ -68,27 +46,15 @@ func (c *HubitatClient) do(method, path string, body any) (string, error) {
 }
 
 func (c *HubitatClient) ListDevices() (string, error) {
-	return c.do(http.MethodGet, "/api/v1/device", nil)
+	return c.get("/api/v1/device")
 }
 
 func (c *HubitatClient) GetDevice(id string) (string, error) {
-	return c.do(http.MethodGet, "/api/v1/device/"+url.PathEscape(id), nil)
-}
-
-func (c *HubitatClient) AddDevice(d Device) (string, error) {
-	return c.do(http.MethodPost, "/api/v1/device", d)
-}
-
-func (c *HubitatClient) UpdateDevice(d Device) (string, error) {
-	return c.do(http.MethodPut, "/api/v1/device", d)
-}
-
-func (c *HubitatClient) DeleteDevice(id string) (string, error) {
-	return c.do(http.MethodDelete, "/api/v1/device/"+url.PathEscape(id), nil)
+	return c.get("/api/v1/device/" + url.PathEscape(id))
 }
 
 func (c *HubitatClient) ListDeviceEvents() (string, error) {
-	return c.do(http.MethodGet, "/api/v1/device/event", nil)
+	return c.get("/api/v1/device/event")
 }
 
 func (c *HubitatClient) GetDeviceEvents(id, start, end string) (string, error) {
@@ -103,5 +69,5 @@ func (c *HubitatClient) GetDeviceEvents(id, start, end string) (string, error) {
 	if len(q) > 0 {
 		path += "?" + q.Encode()
 	}
-	return c.do(http.MethodGet, path, nil)
+	return c.get(path)
 }
