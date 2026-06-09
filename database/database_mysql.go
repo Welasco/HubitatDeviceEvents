@@ -27,6 +27,14 @@ func (mysqldb *Mysql_db) InitDB() (*sql.DB, error) {
 	return sql.Open("mysql", mysqldb.ConnectionString)
 }
 
+func (mysqldb *Mysql_db) Close() error {
+	if db == nil {
+		return nil
+	}
+	logger.Info("[database][Close] Closing database connection")
+	return db.Close()
+}
+
 func (mysqldb *Mysql_db) GetDevice(id string) (model.Device, error) {
 	logger.Debug("[database][GetDevice] Getting device with id " + id)
 	var device model.Device

@@ -39,6 +39,17 @@ func DBInit() {
 	// Implement additional database types here
 }
 
+func DBClose() {
+	if db == nil {
+		return
+	}
+	logger.Info("[device][DBClose] Closing database connection")
+	if err := db.Close(); err != nil {
+		logger.Error("[device][DBClose] Error closing database connection")
+		logger.Error("[device][DBClose] " + err.Error())
+	}
+}
+
 func GetDevices(c *fiber.Ctx) error {
 	devices, err := db.GetDevices()
 	if err != nil {
