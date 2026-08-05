@@ -111,3 +111,23 @@ function Get-ZoozZen76Details {
   $dZoozDetails.device | ft -Property id, deviceTypeName, DisplayName, @{Name='hardwareVersion'; Expression={$_.data.hardwareVersion}}, @{Name='protocolVersion'; Expression={$_.data.protocolVersion}}, @{Name='firmwareVersion'; Expression={$_.data.firmwareVersion}}, @{Name='S2'; Expression={$_.data.S2}}
 }
 Get-ZoozZen76Details
+
+# Including the new driver
+
+$dList = Invoke-RestMethod http://hubitat.localdomain/hub2/devicesList
+$dzooz = $dList.devices.data | where{$_.Type -like "*zen76*" -or $_.Type -like "Zooz*"}
+$dZoozDetails = $dzooz | %{Invoke-RestMethod "http://hubitat.localdomain/device/fullJson/$($_.id)"}
+$dZoozDetails.device | ft -Property id, deviceTypeName, DisplayName, @{Name='hardwareVersion'; Expression={$_.data.hardwareVersion}}, @{Name='protocolVersion'; Expression={$_.data.protocolVersion}}, @{Name='firmwareVersion'; Expression={$_.data.firmwareVersion}}, @{Name='S2'; Expression={$_.data.S2}}
+
+function Get-ZoozZenDetails {
+  param (
+    [string]$hubitatBaseUrl = "http://hubitat.localdomain"
+  )
+
+  $dList = Invoke-RestMethod "$hubitatBaseUrl/hub2/devicesList"
+  $dzooz = $dList.devices.data | where{$_.Type -like "*zen76*" -or $_.Type -like "Zooz*"}
+  $dZoozDetails = $dzooz | %{Invoke-RestMethod "$hubitatBaseUrl/device/fullJson/$($_.id)"}
+
+  $dZoozDetails.device | ft -Property id, deviceTypeName, DisplayName, @{Name='hardwareVersion'; Expression={$_.data.hardwareVersion}}, @{Name='protocolVersion'; Expression={$_.data.protocolVersion}}, @{Name='firmwareVersion'; Expression={$_.data.firmwareVersion}}, @{Name='S2'; Expression={$_.data.S2}}
+}
+Get-ZoozZenDetails
