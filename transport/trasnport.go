@@ -1,7 +1,9 @@
 package transport
 
 import (
+	"context"
 	"os"
+	"time"
 
 	"github.com/Welasco/HubitatDeviceEvents/device"
 	"github.com/gofiber/fiber/v2"
@@ -27,8 +29,18 @@ func setupRoutes(app *fiber.App) {
 
 // Setup - set's up our fiber app and the routes
 // returns a pointer to app
-func Setup() *fiber.App {
-	app := fiber.New()
+func Setup(requestContext context.Context) *fiber.App {
+	app := fiber.New(fiber.Config{
+		ReadTimeout:  5 * time.Second,
+		WriteTimeout: 10 * time.Second,
+		IdleTimeout:  30 * time.Second,
+	})
+	app.Use(func(c *fiber.Ctx) error {
+		ctx, cancel := context.WithTimeout(requestContext, 5*time.Second)
+		defer cancel()
+		c.SetUserContext(ctx)
+		return c.Next()
+	})
 
 	if os.Getenv("Environment") == "Dev" {
 		app.Static("/", "./frontend/dist")

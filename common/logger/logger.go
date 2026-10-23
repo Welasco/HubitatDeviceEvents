@@ -6,7 +6,7 @@ import (
 	"os"
 )
 
-var l log.Logger
+var l = log.New(os.Stdout, "", log.LstdFlags)
 
 var level int
 
@@ -25,26 +25,24 @@ const (
 )
 
 // Init initializes the logger
-func Init(file string, llevel string) {
-
+func Init(file string, llevel string) error {
+	level = Err
 	for i, v := range loglevelstr {
 		if v == llevel {
 			level = i
 		}
 	}
 
-	fileName := file
-	var err error
-	logFile, err := os.OpenFile(fileName, os.O_APPEND|os.O_RDWR|os.O_CREATE, 0644)
-	if err != nil {
-		log.Panic(err)
+	l.SetOutput(os.Stdout)
+	if file != "" {
+		logFile, err := os.OpenFile(file, os.O_APPEND|os.O_RDWR|os.O_CREATE, 0644)
+		if err != nil {
+			return err
+		}
+		l.SetOutput(io.MultiWriter(os.Stdout, logFile))
 	}
-
-	multi := io.MultiWriter(logFile, os.Stdout)
-	l.SetOutput(multi)
-	//l.SetOutput(logFile)
-	//l.SetFlags(log.Lshortfile | log.LstdFlags)
 	l.SetFlags(log.LstdFlags)
+	return nil
 }
 
 func Error(msg ...interface{}) {

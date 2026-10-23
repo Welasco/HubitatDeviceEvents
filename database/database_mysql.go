@@ -13,32 +13,35 @@ import (
 	"github.com/Welasco/HubitatDeviceEvents/common/http"
 	logger "github.com/Welasco/HubitatDeviceEvents/common/logger"
 	"github.com/Welasco/HubitatDeviceEvents/model"
-	_ "github.com/go-sql-driver/mysql"
+	"github.com/go-sql-driver/mysql"
 	_ "github.com/joho/godotenv/autoload"
 )
 
 type Mysql_db struct {
 	ConnectionString string
+	db               *sql.DB
 }
 
-var db *sql.DB
+const operationTimeout = 5 * time.Second
 
 func (mysqldb *Mysql_db) InitDB() (*sql.DB, error) {
 	return sql.Open("mysql", mysqldb.ConnectionString)
 }
 
 func (mysqldb *Mysql_db) Close() error {
-	if db == nil {
+	if mysqldb.db == nil {
 		return nil
 	}
 	logger.Info("[database][Close] Closing database connection")
-	return db.Close()
+	return mysqldb.db.Close()
 }
 
-func (mysqldb *Mysql_db) GetDevice(id string) (model.Device, error) {
+func (mysqldb *Mysql_db) GetDevice(ctx context.Context, id string) (model.Device, error) {
+	ctx, cancel := context.WithTimeout(ctx, operationTimeout)
+	defer cancel()
 	logger.Debug("[database][GetDevice] Getting device with id " + id)
 	var device model.Device
-	row := db.QueryRow("SELECT id, name, label, type, room FROM devices WHERE id = ?", id)
+	row := mysqldb.db.QueryRowContext(ctx, "SELECT id, name, label, type, room FROM devices WHERE id = ?", id)
 	err := row.Scan(&device.Id, &device.Name, &device.Label, &device.Type, &device.Room)
 	if err != nil {
 		logger.Error("[database][GetDevice] Error getting device with id " + id)
@@ -50,15 +53,18 @@ func (mysqldb *Mysql_db) GetDevice(id string) (model.Device, error) {
 	return device, nil
 }
 
-func (mysqldb *Mysql_db) GetDevices() ([]model.Device, error) {
+func (mysqldb *Mysql_db) GetDevices(ctx context.Context) ([]model.Device, error) {
+	ctx, cancel := context.WithTimeout(ctx, operationTimeout)
+	defer cancel()
 	logger.Debug("[database][GetDevices] Getting devices")
 	devices := []model.Device{}
-	rows, err := db.Query("SELECT id, name, label, type, room FROM devices order by label")
+	rows, err := mysqldb.db.QueryContext(ctx, "SELECT id, name, label, type, room FROM devices order by label")
 	if err != nil {
 		logger.Error("[database][GetDevices] Error getting GetDevices")
 		logger.Error("[database][GetDevices] Error: " + err.Error())
 		return devices, err
 	}
+	defer rows.Close()
 
 	for rows.Next() {
 		var device model.Device
@@ -70,14 +76,20 @@ func (mysqldb *Mysql_db) GetDevices() ([]model.Device, error) {
 		}
 		devices = append(devices, device)
 	}
+	if err := rows.Err(); err != nil {
+		logger.Error("[database][GetDevices] Error reading rows: " + err.Error())
+		return devices, err
+	}
 	json, _ := json.Marshal(devices)
 	logger.Debug("[database][GetDevices] Getting devices: " + string(json))
 	return devices, nil
 }
 
-func (mysqldb *Mysql_db) AddDevice(device *model.Device) error {
+func (mysqldb *Mysql_db) AddDevice(ctx context.Context, device *model.Device) error {
+	ctx, cancel := context.WithTimeout(ctx, operationTimeout)
+	defer cancel()
 	logger.Debug("[database][AddDevice] Adding device")
-	_, err := db.Exec("INSERT INTO devices (id, name, label, type, room) VALUES (?, ?, ?, ?, ?)", device.Id, device.Name, device.Label, device.Type, device.Room)
+	_, err := mysqldb.db.ExecContext(ctx, "INSERT INTO devices (id, name, label, type, room) VALUES (?, ?, ?, ?, ?)", device.Id, device.Name, device.Label, device.Type, device.Room)
 	if err != nil {
 		logger.Error("[database][AddDevice] Error adding device")
 		logger.Error("[database][AddDevice] Error: " + err.Error())
@@ -87,9 +99,11 @@ func (mysqldb *Mysql_db) AddDevice(device *model.Device) error {
 	return err
 }
 
-func (mysqldb *Mysql_db) DeleteDevice(id string) error {
+func (mysqldb *Mysql_db) DeleteDevice(ctx context.Context, id string) error {
+	ctx, cancel := context.WithTimeout(ctx, operationTimeout)
+	defer cancel()
 	logger.Debug("[database][DeleteDevice] Deleting device")
-	_, err := db.Exec("DELETE FROM devices WHERE id = ?", id)
+	_, err := mysqldb.db.ExecContext(ctx, "DELETE FROM devices WHERE id = ?", id)
 	if err != nil {
 		logger.Error("[database][DeleteDevice] Error deleting device")
 		logger.Error("[database][DeleteDevice] Error: " + err.Error())
@@ -99,9 +113,11 @@ func (mysqldb *Mysql_db) DeleteDevice(id string) error {
 	return err
 }
 
-func (mysqldb *Mysql_db) UpdateDevice(device *model.Device) error {
+func (mysqldb *Mysql_db) UpdateDevice(ctx context.Context, device *model.Device) error {
+	ctx, cancel := context.WithTimeout(ctx, operationTimeout)
+	defer cancel()
 	logger.Debug("[database][UpdateDevice] Updating device")
-	_, err := db.Exec("UPDATE devices SET name = ?, label = ?, type = ?, room = ? WHERE id = ?", device.Name, device.Label, device.Type, device.Room, device.Id)
+	_, err := mysqldb.db.ExecContext(ctx, "UPDATE devices SET name = ?, label = ?, type = ?, room = ? WHERE id = ?", device.Name, device.Label, device.Type, device.Room, device.Id)
 	if err != nil {
 		logger.Error("[database][UpdateDevice] Error updating device")
 		logger.Error("[database][UpdateDevice] Error: " + err.Error())
@@ -111,57 +127,44 @@ func (mysqldb *Mysql_db) UpdateDevice(device *model.Device) error {
 	return err
 }
 
-func (mysqldb *Mysql_db) CreateDB() error {
-
+func (mysqldb *Mysql_db) CreateDB(ctx context.Context) (err error) {
+	ctx, cancel := context.WithTimeout(ctx, operationTimeout)
+	defer cancel()
+	cfg, err := mysql.ParseDSN(mysqldb.ConnectionString)
+	if err != nil {
+		return err
+	}
+	databaseName := cfg.DBName
+	if databaseName == "" {
+		return errors.New("database name is required in ConnectionString")
+	}
+	cfg.DBName = ""
 	logger.Info("[database][CreateDB] Initializing database connection to create database")
-	nodb_connectionstring := strings.SplitAfter(mysqldb.ConnectionString, "/")
-	dbCreate, err := sql.Open("mysql", nodb_connectionstring[0])
+	dbCreate, err := sql.Open("mysql", cfg.FormatDSN())
 	if err != nil {
 		logger.Error("[database][CreateDB] Error initializing database for database creation")
 		logger.Error("[database][CreateDB] Error: " + err.Error())
 		return err
 	}
-
-	logger.Info("[database][CreateDB] Creating Database " + nodb_connectionstring[1])
-	ctx, cancelfunc := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancelfunc()
-	res, err := dbCreate.ExecContext(ctx, "CREATE DATABASE IF NOT EXISTS "+nodb_connectionstring[1])
+	defer func() {
+		err = errors.Join(err, dbCreate.Close())
+	}()
+	_, err = dbCreate.ExecContext(ctx, "CREATE DATABASE IF NOT EXISTS `"+strings.ReplaceAll(databaseName, "`", "``")+"`")
 	if err != nil {
 		logger.Error("[database][CreateDB] Error initializing database")
 		logger.Error("[database][CreateDB] Error: " + err.Error())
 		return err
 	}
-	logger.Info("[database][CreateDB] Database creation success " + nodb_connectionstring[1])
-
-	logger.Info("[database][CreateDB] Ping Database")
-	err = dbCreate.PingContext(ctx)
-	if err != nil {
-		logger.Error("[database][CreateDB] Error initializing database PingContext")
-		logger.Error("[database][CreateDB] Error: " + err.Error())
-		return err
-	}
-	logger.Info("[database][CreateDB] Ping Database success")
-
-	logger.Info("[database][CreateDB] Checking affected rows during database creation")
-
-	no, err := res.RowsAffected()
-	if err != nil {
-		logger.Error("[database][CreateDB] Error fetching rows affected during database creation")
-		logger.Error("[database][CreateDB] Error: " + err.Error())
-		return err
-	}
-	logger.Info("[database][CreateDB] Rows affected during database creation: " + fmt.Sprint(no))
-
-	logger.Info("[database][CreateDB] Closing database connection after database creation")
-	dbCreate.Close()
-
 	logger.Info("[database][CreateDB] Initializing database connection to create tables")
-	dbCreate, err = sql.Open("mysql", mysqldb.ConnectionString)
+	dbTables, err := sql.Open("mysql", mysqldb.ConnectionString)
 	if err != nil {
 		logger.Error("[database][CreateDB] Error connecting to database for table creation")
 		logger.Error("[database][CreateDB] Error: " + err.Error())
 		return err
 	}
+	defer func() {
+		err = errors.Join(err, dbTables.Close())
+	}()
 	logger.Info("[database][CreateDB] Connected to database for table creation")
 
 	logger.Info("[database][CreateDB] Creating table devices")
@@ -174,21 +177,13 @@ func (mysqldb *Mysql_db) CreateDB() error {
 		room VARCHAR(255) NULL
 	);
 	`
-	res, err = dbCreate.ExecContext(ctx, create_table_devices)
+	_, err = dbTables.ExecContext(ctx, create_table_devices)
 	if err != nil {
 		logger.Error("[database][CreateDB] Error creating tables")
 		logger.Error("[database][CreateDB] Error: " + err.Error())
 		return err
 	}
 	logger.Info("[database][CreateDB] Creating table devices success")
-
-	no, err = res.RowsAffected()
-	if err != nil {
-		logger.Error("[database][CreateDB] Error fetching rows affected during table devices creation")
-		logger.Error("[database][CreateDB] Error: " + err.Error())
-		return err
-	}
-	logger.Info("[database][CreateDB] Rows affected during table devices creation: " + fmt.Sprint(no))
 
 	logger.Info("[database][CreateDB] Creating deviceevents devices")
 	var create_table_deviceevents string = `
@@ -205,7 +200,7 @@ func (mysqldb *Mysql_db) CreateDB() error {
 		CONSTRAINT deviceId FOREIGN KEY (deviceId) REFERENCES devices (id)
 	);
 	`
-	res, err = dbCreate.ExecContext(ctx, create_table_deviceevents)
+	_, err = dbTables.ExecContext(ctx, create_table_deviceevents)
 	if err != nil {
 		logger.Error("[database][CreateDB] Error creating table deviceevents")
 		logger.Error("[database][CreateDB] Error: " + err.Error())
@@ -213,29 +208,22 @@ func (mysqldb *Mysql_db) CreateDB() error {
 	}
 	logger.Info("[database][CreateDB] Creating table deviceevents success")
 
-	no, err = res.RowsAffected()
-	if err != nil {
-		logger.Error("[database][CreateDB] Error fetching rows affected during table deviceevents creation")
-		logger.Error("[database][CreateDB] Error: " + err.Error())
-		return err
-	}
-	logger.Info("[database][CreateDB] Rows affected during table deviceevents creation: " + fmt.Sprint(no))
-
-	logger.Info("[database][CreateDB] Closing database connection after table creation")
-	dbCreate.Close()
 	logger.Info("[database][CreateDB] Database full initialized success")
 	return err
 }
 
-func (mysqldb *Mysql_db) GetDeviceEvents() ([]model.DeviceEvent, error) {
+func (mysqldb *Mysql_db) GetDeviceEvents(ctx context.Context) ([]model.DeviceEvent, error) {
+	ctx, cancel := context.WithTimeout(ctx, operationTimeout)
+	defer cancel()
 	logger.Debug("[database][GetDeviceEvents] Getting devices events")
 	deviceevents := []model.DeviceEvent{}
-	rows, err := db.Query("SELECT timestamp, name, value, displayName, deviceId, descriptionText, unit, type, data FROM deviceevents")
+	rows, err := mysqldb.db.QueryContext(ctx, "SELECT timestamp, name, value, displayName, deviceId, descriptionText, unit, type, data FROM deviceevents")
 	if err != nil {
 		logger.Error("[database][GetDeviceEvents] Error getting devices events")
 		logger.Error("[database][GetDeviceEvents] Error: " + err.Error())
 		return deviceevents, err
 	}
+	defer rows.Close()
 
 	for rows.Next() {
 		var deviceevent model.DeviceEvent
@@ -247,32 +235,39 @@ func (mysqldb *Mysql_db) GetDeviceEvents() ([]model.DeviceEvent, error) {
 		}
 		deviceevents = append(deviceevents, deviceevent)
 	}
+	if err := rows.Err(); err != nil {
+		logger.Error("[database][GetDeviceEvents] Error reading rows: " + err.Error())
+		return deviceevents, err
+	}
 	json, _ := json.Marshal(deviceevents)
 	logger.Debug("[database][GetDeviceEvents] Getting device events: " + string(json))
 	return deviceevents, nil
 }
 
-func (mysqldb *Mysql_db) GetDeviceEventId(id string, timeStamp model.UrlQueries) ([]model.DeviceEvent, error) {
+func (mysqldb *Mysql_db) GetDeviceEventId(ctx context.Context, id string, timeStamp model.UrlQueries) ([]model.DeviceEvent, error) {
+	ctx, cancel := context.WithTimeout(ctx, operationTimeout)
+	defer cancel()
 	logger.Debug("[database][GetDeviceEventId] Getting events from device with id " + id)
 	deviceevents := []model.DeviceEvent{}
 	var rows *sql.Rows
 	var err error
 
 	if len(timeStamp.Start) > 0 && len(timeStamp.End) > 0 {
-		rows, err = db.Query("SELECT timestamp, name, value, displayName, deviceId, descriptionText, unit, type, data FROM deviceevents WHERE deviceId = ? and timestamp BETWEEN ? and ?", id, timeStamp.Start, timeStamp.End)
+		rows, err = mysqldb.db.QueryContext(ctx, "SELECT timestamp, name, value, displayName, deviceId, descriptionText, unit, type, data FROM deviceevents WHERE deviceId = ? and timestamp BETWEEN ? and ?", id, timeStamp.Start, timeStamp.End)
 		if err != nil {
 			logger.Error("[database][GetDeviceEventId] Error getting events from device with id " + id)
 			logger.Error("[database][GetDeviceEventId] Error: " + err.Error())
 			return deviceevents, err
 		}
 	} else {
-		rows, err = db.Query("SELECT timestamp, name, value, displayName, deviceId, descriptionText, unit, type, data FROM deviceevents WHERE deviceId = ?", id)
+		rows, err = mysqldb.db.QueryContext(ctx, "SELECT timestamp, name, value, displayName, deviceId, descriptionText, unit, type, data FROM deviceevents WHERE deviceId = ?", id)
 		if err != nil {
 			logger.Error("[database][GetDeviceEventId] Error getting events from device with id " + id)
 			logger.Error("[database][GetDeviceEventId] Error: " + err.Error())
 			return deviceevents, err
 		}
 	}
+	defer rows.Close()
 
 	for rows.Next() {
 		var deviceevent model.DeviceEvent
@@ -284,24 +279,39 @@ func (mysqldb *Mysql_db) GetDeviceEventId(id string, timeStamp model.UrlQueries)
 		}
 		deviceevents = append(deviceevents, deviceevent)
 	}
+	if err := rows.Err(); err != nil {
+		logger.Error("[database][GetDeviceEventId] Error reading rows: " + err.Error())
+		return deviceevents, err
+	}
 	json, _ := json.Marshal(deviceevents)
 	logger.Debug("[database][GetDeviceEventId] Getting events from device with id " + id + ": " + string(json))
 	return deviceevents, nil
 }
 
-func (mysqldb *Mysql_db) RegisterDeviceEvent(event *model.DeviceEvent) error {
+func (mysqldb *Mysql_db) RegisterDeviceEvent(ctx context.Context, event *model.DeviceEvent) error {
+	ctx, cancel := context.WithTimeout(ctx, operationTimeout)
+	defer cancel()
 	logger.Debug("[database][RegisterDeviceEvent] Registering device event")
-	_, err := db.Exec("INSERT INTO deviceevents (name, value, displayName, deviceId, descriptionText, unit, type, data) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", event.Name, event.Value, event.DisplayName, event.DeviceId, event.DescriptionText, event.Unit, event.Type, event.Data)
+	_, err := mysqldb.db.ExecContext(ctx, "INSERT INTO deviceevents (name, value, displayName, deviceId, descriptionText, unit, type, data) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", event.Name, event.Value, event.DisplayName, event.DeviceId, event.DescriptionText, event.Unit, event.Type, event.Data)
 	if err != nil {
 		logger.Error("[database][RegisterDeviceEvent] Error registering device")
 		logger.Error("[database][RegisterDeviceEvent] Error: " + err.Error())
-		//return err
+		insertErr := err
+		if ctx.Err() != nil {
+			return ctx.Err()
+		}
 
 		// Check if device exists
-		device, err := mysqldb.GetDevice(event.DeviceId)
+		device, err := mysqldb.GetDevice(ctx, event.DeviceId)
 		if err != nil {
 			logger.Error("[device][RegisterDeviceEvent] Error reading devices from database")
 			logger.Error("[device][RegisterDeviceEvent] Error: Device " + event.DeviceId + " not found")
+			if !errors.Is(err, sql.ErrNoRows) {
+				return err
+			}
+		}
+		if device.Id != "" {
+			return insertErr
 		}
 		if device.Id == "" {
 			logger.Debug("[database][RegisterDeviceEvent] Device not found, registering device")
@@ -313,8 +323,11 @@ func (mysqldb *Mysql_db) RegisterDeviceEvent(event *model.DeviceEvent) error {
 				logger.Error("[database][RegisterDeviceEvent] Unable to register device")
 				return errors.New("error getting HubitatGetDevicesUrl from environment variable or .env file")
 			}
-			hubitatUrl_builder := strings.Split(hubitatUrl, "?")
-			respbody, err := http.Http_client(hubitatUrl_builder[0] + "/" + event.DeviceId + "?" + hubitatUrl_builder[1])
+			hubitatUrl_builder := strings.SplitN(hubitatUrl, "?", 2)
+			if len(hubitatUrl_builder) != 2 {
+				return errors.New("HubitatGetDevicesUrl must include an access token query")
+			}
+			respbody, err := http.Http_client(ctx, hubitatUrl_builder[0]+"/"+event.DeviceId+"?"+hubitatUrl_builder[1])
 			if err != nil {
 				logger.Error("[database][RegisterDeviceEvent] Failed to connect to Hubitat Hub")
 				logger.Error("[database][RegisterDeviceEvent] Error: " + err.Error())
@@ -333,7 +346,7 @@ func (mysqldb *Mysql_db) RegisterDeviceEvent(event *model.DeviceEvent) error {
 			logger.Debug("[database][RegisterDeviceEvent] Device unmarshalled")
 
 			logger.Debug("[database][RegisterDeviceEvent] Adding device")
-			err = mysqldb.AddDevice(&device)
+			err = mysqldb.AddDevice(ctx, &device)
 			if err != nil {
 				logger.Error("[device][RegisterDeviceEvent] Error adding device")
 				logger.Error("[device][RegisterDeviceEvent] Error: " + err.Error())
@@ -342,7 +355,7 @@ func (mysqldb *Mysql_db) RegisterDeviceEvent(event *model.DeviceEvent) error {
 			logger.Debug("[database][RegisterDeviceEvent] Device added")
 
 			logger.Debug("[database][RegisterDeviceEvent] Registering device event after registering device")
-			_, err = db.Exec("INSERT INTO deviceevents (name, value, displayName, deviceId, descriptionText, unit, type, data) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", event.Name, event.Value, event.DisplayName, event.DeviceId, event.DescriptionText, event.Unit, event.Type, event.Data)
+			_, err = mysqldb.db.ExecContext(ctx, "INSERT INTO deviceevents (name, value, displayName, deviceId, descriptionText, unit, type, data) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", event.Name, event.Value, event.DisplayName, event.DeviceId, event.DescriptionText, event.Unit, event.Type, event.Data)
 			if err != nil {
 				logger.Error("[database][RegisterDeviceEvent] Error registering device to database after registering device")
 				logger.Error("[database][RegisterDeviceEvent] Error: " + err.Error())
@@ -356,18 +369,38 @@ func (mysqldb *Mysql_db) RegisterDeviceEvent(event *model.DeviceEvent) error {
 	return nil
 }
 
-func NewMySQLDB(ConnectionString string) (*Mysql_db, error) {
-	var mysqldb Mysql_db = Mysql_db{
-		ConnectionString: ConnectionString,
+func NewMySQLDB(ctx context.Context, ConnectionString string) (*Mysql_db, error) {
+	cfg, err := mysql.ParseDSN(ConnectionString)
+	if err != nil {
+		return nil, fmt.Errorf("invalid MySQL ConnectionString: %w", err)
 	}
-	var err error
+	if cfg.Timeout <= 0 || cfg.Timeout > operationTimeout {
+		cfg.Timeout = operationTimeout
+	}
+	if cfg.ReadTimeout <= 0 || cfg.ReadTimeout > operationTimeout {
+		cfg.ReadTimeout = operationTimeout
+	}
+	if cfg.WriteTimeout <= 0 || cfg.WriteTimeout > operationTimeout {
+		cfg.WriteTimeout = operationTimeout
+	}
+	var mysqldb Mysql_db = Mysql_db{
+		ConnectionString: cfg.FormatDSN(),
+	}
 	logger.Info("[database][NewMySQLDB] Invoking database creation")
-	err = mysqldb.CreateDB()
+	if err := mysqldb.CreateDB(ctx); err != nil {
+		return nil, err
+	}
 	logger.Info("[database][NewMySQLDB] Invoking database initialization")
-	db, err = mysqldb.InitDB()
+	mysqldb.db, err = mysqldb.InitDB()
 	if err != nil {
 		logger.Error("[database][NewMySQLDB] Error initializing database connection")
 		logger.Error("[database][NewMySQLDB] Error: " + err.Error())
+		return nil, err
 	}
-	return &mysqldb, err
+	ctx, cancel := context.WithTimeout(ctx, operationTimeout)
+	defer cancel()
+	if err := mysqldb.db.PingContext(ctx); err != nil {
+		return nil, errors.Join(err, mysqldb.Close())
+	}
+	return &mysqldb, nil
 }

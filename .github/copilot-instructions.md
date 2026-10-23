@@ -30,9 +30,11 @@ docker build -f Dockerfile -t hubitatdeviceevents .
 
 The multi-stage Dockerfile builds the Go binary, then the SolidJS frontend, and combines them into an Alpine image. In production the frontend is served from `./public`; in dev mode (`Environment=Dev`) it's served from `./frontend/dist`.
 
-### No tests exist yet
+### Tests
 
-There are no `_test.go` files or frontend test scripts.
+Run backend regression tests with `go test ./...`. They cover shutdown draining
+and deadlines, dependency cancellation, query cleanup, logging, and error responses.
+There are no frontend test scripts.
 
 ## Architecture
 
@@ -44,7 +46,7 @@ database/
   database_interface.go  → Database interface all backends must implement
   database_mysql.go      → MySQL implementation (only active backend)
 model/                   → Shared data structs: Device, DeviceEvent, Config, UrlQueries
-common/logger/           → Custom leveled logger (Err/Warn/Inf/Deb) writing to file + stdout
+common/logger/           → Custom leveled logger (Err/Warn/Inf/Deb), stdout with opt-in file logging
 common/http/             → Simple HTTP GET client used to fetch device info from the Hubitat hub
 frontend/                → SolidJS + Vite + Tailwind CSS + AG Grid UI
 ```
@@ -70,7 +72,8 @@ All config is via environment variables, loaded automatically from `.env` by `go
 | `DatabaseType` | Must be `mysql` (only supported backend) |
 | `HubitatGetDevicesUrl` | Hubitat Maker API URL for auto-registering devices |
 | `logLevel` | `Err`, `Warn`, `Inf`, or `Deb` |
-| `logPath` | Log file path prefix |
+| `logToFile` | Opt-in file logging; default false, keep disabled in Kubernetes |
+| `logPath` | Log file path prefix, used only when `logToFile=true` |
 | `PORT` | Server port (default `3000`) |
 | `Environment` | Set to `Dev` to serve frontend from `./frontend/dist` |
 
@@ -82,3 +85,5 @@ All config is via environment variables, loaded automatically from `.env` by `go
 - **Error responses**: Return `fiber.Map{"status": "error", "message": "...", "data": err.Error()}` with appropriate HTTP status codes.
 - **Database auto-init**: `NewMySQLDB` creates the database and tables automatically on startup if they don't exist.
 - **Frontend API base URL**: Set via `window.base_url` in the HTML host page, not hardcoded.
+- **Dependency contexts**: Database methods accept `context.Context`; handlers pass `c.UserContext()`. Each request shares a 5-second dependency deadline.
+- **Shutdown**: Drain HTTP for up to 10 seconds before canceling dependency work and closing MySQL; the entire shutdown has a 15-second exit budget.

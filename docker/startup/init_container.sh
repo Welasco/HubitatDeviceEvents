@@ -2,4 +2,4 @@
 
 sed -i -e "s|/api/|$backendUri|g" /app/public/index.html
 
-/app/hubitatedeviceevents
+exec /app/hubitatedeviceevents
